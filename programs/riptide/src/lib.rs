@@ -1,0 +1,71 @@
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self};
+
+use context::*;
+use account::*;
+
+mod account;
+mod context;
+
+declare_id!("6rjN1JJZJQnGw5ppeN2ppXtvVpzq3mJbxNyDpiMaJ18H");
+
+#[program]
+pub mod riptide {
+    use super::*;
+    pub fn init_campaign(ctx: Context<InitCampaign>, prize_data: PrizeData) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        campaign.init(ctx.accounts.owner.key(), prize_data)
+    }
+    pub fn add_campaign_funds(ctx: Context<AddCampaignFunds>, bump: u8, amount: u64) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        let vault = Vault{
+            token: ctx.accounts.vault_token.key(),
+            mint: ctx.accounts.vault_token.mint
+        };
+        campaign.add_vault(vault)?;
+        token::transfer(ctx.accounts.into(), amount)
+    }
+    pub fn withdraw_campaign_funds(ctx: Context<WithdrawCampaignFunds>, bump: u8) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        let vault = Vault{
+            token: ctx.accounts.vault_token.key(),
+            mint: ctx.accounts.vault_token.mint
+        };
+        campaign.remove_vault(vault)?;
+        let seeds = &[&CAMPAIGN_PDA_SEED[..], &[bump]];
+        token::transfer(
+            ctx.accounts.into_transfer_context().with_signer(&[seeds]), 
+            ctx.accounts.vault_token.amount)
+    }
+    pub fn start_campaign(ctx: Context<StartCampaign>) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        campaign.start()
+    }
+    pub fn stop_campaign(ctx: Context<StopCampaign>) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        campaign.stop()
+    }
+    pub fn revoke_campaign(ctx: Context<RevokeCampaign>) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        campaign.revoke()
+    }
+    pub fn crank_campaign(ctx: Context<CrankCampaign>, bump: u8) -> ProgramResult {
+        let campaign = &mut ctx.accounts.campaign;
+        let prize = match campaign.crank() {
+            Ok(prize_opt) => match prize_opt {
+                None => return Ok(()),
+                Some(prize) => prize
+            },
+            Err(e) => return Err(e)
+        };
+        let winner_amount = prize.amount * 9 / 10; // 90% goes to the winner
+        let cranker_amount = prize.amount * 1 / 10; // 10% goes to the cranker as rewards
+        let seeds = &[&CAMPAIGN_PDA_SEED[..], &[bump]];
+        token::transfer(
+            ctx.accounts.into_transfer_to_winner_context().with_signer(&[seeds]), 
+            winner_amount)?;
+        token::transfer(
+            ctx.accounts.into_transfer_to_cranker_context().with_signer(&[seeds]),
+            cranker_amount)
+    }
+}
