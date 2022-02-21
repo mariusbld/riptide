@@ -12,9 +12,13 @@ declare_id!("6rjN1JJZJQnGw5ppeN2ppXtvVpzq3mJbxNyDpiMaJ18H");
 #[program]
 pub mod riptide {
     use super::*;
-    pub fn init_campaign(ctx: Context<InitCampaign>, prize_data: PrizeData) -> ProgramResult {
+    pub fn init_campaign(
+        ctx: Context<InitCampaign>,
+        prize_data: PrizeData,
+        target_volume: u64,
+    ) -> ProgramResult {
         let campaign = &mut ctx.accounts.campaign;
-        campaign.init(ctx.accounts.owner.key(), prize_data)
+        campaign.init(ctx.accounts.owner.key(), prize_data, target_volume)
     }
     pub fn add_campaign_funds(
         ctx: Context<AddCampaignFunds>,
@@ -54,9 +58,17 @@ pub mod riptide {
         let campaign = &mut ctx.accounts.campaign;
         campaign.revoke()
     }
-    pub fn crank_campaign(ctx: Context<CrankCampaign>, bump: u8) -> ProgramResult {
+    pub fn crank_campaign(
+        ctx: Context<CrankCampaign>,
+        bump: u8,
+        purchase: Purchase,
+    ) -> ProgramResult {
         let campaign = &mut ctx.accounts.campaign;
-        let prize = match campaign.crank() {
+        let recent_blockhashes =
+            RecentBlockhashes::from_account_info(ctx.accounts.recent_blockhashes.as_ref())?;
+        let random = Random::new(recent_blockhashes);
+        //let random = Random::new(ctx.accounts.recent_blockhashes.account);
+        let prize = match campaign.crank(purchase, random) {
             Ok(prize_opt) => match prize_opt {
                 None => return Ok(()),
                 Some(prize) => prize,
