@@ -12,9 +12,9 @@ pub const CAMPAIGN_PDA_SEED: &[u8] = b"campaign";
 pub struct InitCampaign<'info> {
     // TODO (marius): convert to dynamic size
     #[account(init,
-    payer = owner,
-    space = ACCOUNT_HEADER_SIZE + size_of::<Campaign>() + MAX_PRIZE_ENTRIES * size_of::<PrizeEntry>()
-  )]
+      payer = owner,
+      space = ACCOUNT_HEADER_SIZE + size_of::<Campaign>() + MAX_PRIZE_ENTRIES * size_of::<PrizeEntry>()
+    )]
     pub campaign: Account<'info, Campaign>,
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -100,6 +100,7 @@ pub struct RevokeCampaign<'info> {
 
 #[derive(Accounts)]
 pub struct CrankCampaign<'info> {
+    pub cranker: Signer<'info>,
     #[account(mut)]
     pub campaign: Account<'info, Campaign>,
     pub pda: AccountInfo<'info>,
@@ -110,6 +111,7 @@ pub struct CrankCampaign<'info> {
     #[account(mut)]
     pub cranker_token: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
+    pub recent_blockhashes: Sysvar<'info, RecentBlockhashes>,
 }
 
 impl<'info> CrankCampaign<'info> {
