@@ -76,7 +76,7 @@ pub mod riptide {
             Err(e) => return Err(e),
         };
         let winner_amount = prize.amount * 9 / 10; // 90% goes to the winner
-        let cranker_amount = prize.amount * 1 / 10; // 10% goes to the cranker as rewards
+        let cranker_amount = prize.amount - winner_amount; // remaining goes to the cranker as payment
         let seeds = &[&CAMPAIGN_PDA_SEED[..], &[bump]];
         token::transfer(
             ctx.accounts
