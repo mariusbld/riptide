@@ -12,13 +12,9 @@ declare_id!("6rjN1JJZJQnGw5ppeN2ppXtvVpzq3mJbxNyDpiMaJ18H");
 #[program]
 pub mod riptide {
     use super::*;
-    pub fn init_campaign(
-        ctx: Context<InitCampaign>,
-        prize_data: PrizeData,
-        target_volume: u64,
-    ) -> ProgramResult {
+    pub fn init_campaign(ctx: Context<InitCampaign>, config: CampaignConfig) -> ProgramResult {
         let campaign = &mut ctx.accounts.campaign;
-        campaign.init(ctx.accounts.owner.key(), prize_data, target_volume)
+        campaign.init(ctx.accounts.owner.key(), config)
     }
     pub fn add_campaign_funds(
         ctx: Context<AddCampaignFunds>,
