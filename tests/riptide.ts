@@ -5,15 +5,10 @@ import { expect } from 'chai';
 
 const CAMPAIGN_PDA_SEED = "campaign";
 
-function newPrize(amount: number) {
-  return { amount: new anchor.BN(amount) };
-}
-
-function newPrizeEntry(amount: number, count: number, odds: number) {
+function newPrize(count: number, amount: number) {
   return {
     count: new anchor.BN(count),
-    odds: new anchor.BN(odds),
-    prize: newPrize(amount)    
+    amount: new anchor.BN(amount)
   };
 }
 
@@ -43,11 +38,14 @@ describe('riptide', () => {
   });
   
   it('init campaign', async() => {
-    const prizeEntry1 = newPrizeEntry(100, 1, 1);
-    const prizeEntry2 = newPrizeEntry(50, 5, 10);
-    const prizeData = { entries: [prizeEntry1, prizeEntry2] };
-    const targetVolume = new anchor.BN(100);
-    await program.rpc.initCampaign(prizeData, targetVolume, {
+    const prize1 = newPrize(1, 100);
+    const prize2 = newPrize(5, 50);
+    const prizeData = { entries: [prize1, prize2] };
+    const end = { targetSalesReached: {} }
+    const targetSalesAmount = new anchor.BN(500);
+    const targetEndTs = null;
+    const config = { prizeData, end, targetSalesAmount, targetEndTs };
+    await program.rpc.initCampaign(config, {
       accounts: {
         campaign: campaignKeypair.publicKey,
         owner: owner.publicKey,
@@ -58,9 +56,11 @@ describe('riptide', () => {
 
     const campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     expect(campaign.owner).to.eql(owner.publicKey);
-    expect(campaign.prize.entries.length).to.eql(prizeData.entries.length);
+    expect(campaign.config.prizeData.entries.length).to.eql(prizeData.entries.length);
+    expect(campaign.config.end).to.eql(end);
+    expect(campaign.config.targetSalesAmount.toNumber()).to.eql(targetSalesAmount.toNumber())
     expect(campaign.state).to.eql({ initialized: {} });
-    expect(campaign.stats.targetPurchaseVolume.toNumber()).to.eql(targetVolume.toNumber());
+    expect(campaign.stats.prizeStats.length).to.eql(prizeData.entries.length);
   });
 
   it('add funds', async() => {
@@ -102,7 +102,7 @@ describe('riptide', () => {
     expect(campaign.state).to.eql({ started: {} });
   });
 
-  xit ('stop campaign', async () => {
+  it ('stop campaign', async () => {
     await program.rpc.stopCampaign({
       accounts: {
         owner: owner.publicKey,
@@ -112,7 +112,7 @@ describe('riptide', () => {
     });
   });
 
-  xit ('revoke campaign', async () => {
+  it ('revoke campaign', async () => {
     await program.rpc.revokeCampaign({
       accounts: {
         owner: owner.publicKey,
@@ -122,7 +122,7 @@ describe('riptide', () => {
     });
   });
 
-  xit('withdraw funds', async() => {
+  it('withdraw funds', async() => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
     const initialVault = await getAccount(conn, vaultToken);
@@ -146,7 +146,7 @@ describe('riptide', () => {
     expect(Number(dst.amount)).to.equal(Number(initialVault.amount));
   });
 
-  it('crank campaign', async() => {
+  xit('crank campaign', async() => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
     const purchase = { amount: new anchor.BN(50) }

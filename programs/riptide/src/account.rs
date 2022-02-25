@@ -9,63 +9,78 @@ pub enum RiptideError {
     VaultAlreadyInitialized,
     InternalErrorProbArray,
     InternalErrorRandom,
+    NotImplemented,
 }
 
-#[derive(Clone, AnchorSerialize, AnchorDeserialize, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone)]
 pub struct Prize {
     pub amount: u64,
+    pub count: u64,
 }
 
-#[derive(Clone, AnchorSerialize, AnchorDeserialize, Copy)]
-pub struct PrizeEntry {
-    prize: Prize,
-    count: u64,
-    odds: u64,
-}
-
-#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone)]
 pub struct PrizeData {
-    pub entries: Vec<PrizeEntry>,
+    pub entries: Vec<Prize>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Clone)]
+pub enum CampaignEndType {
+    ScheduledDate,
+    TargetSalesReached,
+}
+
+impl Default for CampaignEndType {
+    fn default() -> Self {
+        CampaignEndType::TargetSalesReached
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone)]
+pub struct CampaignConfig {
+    pub prize_data: PrizeData,
+    pub end: CampaignEndType,
+    pub target_end_ts: Option<i64>,
+    pub target_sales_amount: Option<u64>,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct PrizeEntryStats {
-    awarded_count: u64,
+pub struct PrizeStats {
+    pub awarded_count: u64,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct Stats {
-    pub prize_stats: Vec<PrizeEntryStats>,
-    pub target_purchase_volume: u64,
-    pub running_purchase_volume: u64,
-    pub running_purchase_count: u64,
+pub struct CampaignStats {
+    pub prize_stats: Vec<PrizeStats>,
+    pub running_sales_amount: u64,
+    pub running_sales_count: u64,
+    pub start_ts: i64,
+    pub stop_ts: i64,
+}
+
+impl CampaignStats {
+    pub fn init(&mut self, pirze_entry_size: usize) {
+        self.prize_stats = vec![PrizeStats { awarded_count: 0 }; pirze_entry_size];
+        self.running_sales_amount = 0;
+        self.running_sales_count = 0;
+    }
+    pub fn add_purchase(&mut self, purchase: Purchase) {
+        self.running_sales_count += 1;
+        self.running_sales_amount += purchase.amount;
+    }
+    pub fn estimate_remaining_purchases(&self, target_sales_amount: u64) -> u64 {
+        let remaining_amount = target_sales_amount - self.running_sales_amount;
+        if remaining_amount <= 0 {
+            return 0;
+        } else {
+            let avg_purchase_amount = self.running_sales_amount / self.running_sales_count;
+            return remaining_amount / avg_purchase_amount;
+        }
+    }
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Purchase {
     amount: u64,
-}
-
-impl Stats {
-    pub fn init(&mut self, pirze_entry_size: usize, target_volume: u64) {
-        self.prize_stats = vec![PrizeEntryStats { awarded_count: 0 }; pirze_entry_size];
-        self.target_purchase_volume = target_volume;
-        self.running_purchase_volume = 0;
-        self.running_purchase_count = 0;
-    }
-    pub fn add_purchase(&mut self, purchase: Purchase) {
-        self.running_purchase_count += 1;
-        self.running_purchase_volume += purchase.amount;
-    }
-    pub fn estimate_remaining_purchases(&self) -> u64 {
-        let remaining_volume = self.target_purchase_volume - self.running_purchase_volume;
-        if remaining_volume <= 0 {
-            return 0;
-        } else {
-            let avg_purchase_amount = self.running_purchase_volume / self.running_purchase_count;
-            return remaining_volume / avg_purchase_amount;
-        }
-    }
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -87,9 +102,9 @@ pub enum CampaignState {
 pub struct Campaign {
     pub owner: Pubkey,
     pub vaults: Vec<Vault>,
-    pub prize: PrizeData,
-    pub stats: Stats,
     pub state: CampaignState,
+    pub config: CampaignConfig,
+    pub stats: CampaignStats,
 }
 
 impl Campaign {
@@ -108,11 +123,25 @@ impl Campaign {
     fn can_crank(&self) -> bool {
         self.state == CampaignState::Started
     }
-    pub fn init(&mut self, owner: Pubkey, prize: PrizeData, target_volume: u64) -> ProgramResult {
+    fn validate_config(config: &CampaignConfig) -> bool {
+        return match config.end {
+            CampaignEndType::ScheduledDate => config.target_end_ts.is_some(),
+            CampaignEndType::TargetSalesReached => config.target_sales_amount.is_some(),
+        };
+    }
+    pub fn init(&mut self, owner: Pubkey, config: CampaignConfig) -> ProgramResult {
         require!(self.can_init(), RiptideError::InvalidState);
+        require!(
+            config.end == CampaignEndType::TargetSalesReached,
+            RiptideError::NotImplemented
+        );
+        require!(
+            Campaign::validate_config(&config),
+            ProgramError::InvalidArgument
+        );
         self.owner = owner;
-        self.prize = prize.clone();
-        self.stats.init(prize.entries.len(), target_volume);
+        self.config = config.clone();
+        self.stats.init(config.prize_data.entries.len());
         self.state = CampaignState::Initialized;
         self.vaults = Vec::new();
         Ok(())
@@ -163,7 +192,7 @@ impl Campaign {
         self.stats.add_purchase(purchase);
         let winning_prob = self.get_winning_prob();
         require!(
-            winning_prob.len() == self.prize.entries.len(),
+            winning_prob.len() == self.config.prize_data.entries.len(),
             RiptideError::InternalErrorProbArray
         );
         let chance = random.float64();
@@ -171,16 +200,20 @@ impl Campaign {
             chance >= 0.0 && chance <= 1.0,
             RiptideError::InternalErrorRandom
         );
-        for (prize_idx, prize_entry) in self.prize.entries.iter().enumerate() {
+        for (prize_idx, prize) in self.config.prize_data.entries.iter().enumerate() {
             let prob = winning_prob[prize_idx];
             if chance <= prob {
-                return Ok(Some(prize_entry.prize));
+                return Ok(Some(prize.clone()));
             }
         }
         Ok(None)
     }
     fn get_winning_prob(&self) -> Vec<f64> {
-        let remaining_purchases = self.stats.estimate_remaining_purchases();
+        let target_sales_amount = self
+            .config
+            .target_sales_amount
+            .expect("invalid config: target_sales_amount required");
+        let remaining_purchases = self.stats.estimate_remaining_purchases(target_sales_amount);
         let remaining_prize_count = self.get_remaining_prize_count();
         let mut winning_prob: Vec<f64> = vec![0.0; remaining_prize_count.len()];
         for (idx, &count) in remaining_prize_count.iter().enumerate() {
@@ -189,10 +222,9 @@ impl Campaign {
         return winning_prob;
     }
     fn get_remaining_prize_count(&self) -> Vec<u64> {
-        let mut remaining_prize_count = vec![0; self.prize.entries.len()];
-        for (idx, prize_entry) in self.prize.entries.iter().enumerate() {
-            remaining_prize_count[idx] =
-                prize_entry.count - self.stats.prize_stats[idx].awarded_count;
+        let mut remaining_prize_count = vec![0; self.config.prize_data.entries.len()];
+        for (idx, prize) in self.config.prize_data.entries.iter().enumerate() {
+            remaining_prize_count[idx] = prize.count - self.stats.prize_stats[idx].awarded_count;
         }
         return remaining_prize_count;
     }

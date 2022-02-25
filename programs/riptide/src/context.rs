@@ -13,7 +13,7 @@ pub struct InitCampaign<'info> {
     // TODO (marius): convert to dynamic size
     #[account(init,
       payer = owner,
-      space = ACCOUNT_HEADER_SIZE + size_of::<Campaign>() + MAX_PRIZE_ENTRIES * size_of::<PrizeEntry>()
+      space = ACCOUNT_HEADER_SIZE + size_of::<Campaign>() + MAX_PRIZE_ENTRIES * size_of::<Prize>()
     )]
     pub campaign: Account<'info, Campaign>,
     #[account(mut)]
