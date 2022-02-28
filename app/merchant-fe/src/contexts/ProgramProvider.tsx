@@ -13,7 +13,7 @@ import {
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
 
-const PROGRAM_ID = "3fUXULHVF4EwjRG6hzuehMF2P15k6QQmXKCAcfAqn9iJ";
+const PROGRAM_ID = "371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL";
 const BASE_ACCOUNT_OFFSET = 8;
 
 export interface ProgramProviderProps {
