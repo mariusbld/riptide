@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext } from "react";
 
 export type EndpointName = "local" | "testnet" | "devnet" | "mainnet-beta";
 
@@ -8,7 +8,9 @@ export interface EndpointContextState {
   url: string;
 }
 
-export const EndpointContext = createContext<EndpointContextState>({} as EndpointContextState);
+export const EndpointContext = createContext<EndpointContextState>(
+  {} as EndpointContextState
+);
 
 export const useEndpoint = () => {
   return useContext(EndpointContext);

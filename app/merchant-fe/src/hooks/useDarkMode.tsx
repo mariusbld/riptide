@@ -10,8 +10,8 @@ export interface DarkModeContextState {
 
 const defaultDarkMode: DarkModeContextState = {
   theme: lightTheme,
-  toggle: () => {}
-}
+  toggle: () => {},
+};
 
 export const DarkModeContext = createContext(defaultDarkMode);
 

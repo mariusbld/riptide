@@ -32,8 +32,8 @@ export interface CampaignStats {
 }
 
 export interface Vault {
-  mint: PublicKey,
-  token: PublicKey
+  mint: PublicKey;
+  token: PublicKey;
 }
 
 export enum CampaignState {
@@ -41,7 +41,7 @@ export enum CampaignState {
   Initialized,
   Started,
   Stopped,
-  Revoked
+  Revoked,
 }
 
 export interface Campaign {
@@ -62,7 +62,9 @@ export interface ProgramContextState {
   revokeCampaign(id: CampaignId): Promise<void>;
 }
 
-export const ProgramContext = createContext<ProgramContextState>({} as ProgramContextState);
+export const ProgramContext = createContext<ProgramContextState>(
+  {} as ProgramContextState
+);
 
 export function useProgram(): ProgramContextState {
   return useContext(ProgramContext);

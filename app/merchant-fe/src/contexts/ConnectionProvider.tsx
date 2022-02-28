@@ -1,4 +1,4 @@
-import React, {FC} from "react";
+import React, { FC } from "react";
 import { ConnectionProvider as WalletConnectionProvider } from "@solana/wallet-adapter-react";
 import { useEndpoint } from "../hooks/useEndpoint";
 
@@ -9,4 +9,4 @@ export const ConnectionProvider: FC = ({ children }) => {
       {children}
     </WalletConnectionProvider>
   );
-}
+};

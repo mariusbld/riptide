@@ -5,14 +5,12 @@ import { Route, Routes } from "react-router-dom";
 import CreateCampaign from "./CreateCampaign";
 import CampaignList from "./CampaignList";
 
-const ConnectWallet: FC = () => (
-  <WalletMultiButton />
-);
+const ConnectWallet: FC = () => <WalletMultiButton />;
 
 const Home: FC = () => {
   const wallet = useWallet();
   if (!wallet.connected) {
-    return <ConnectWallet />
+    return <ConnectWallet />;
   }
   return (
     <Routes>
@@ -20,6 +18,6 @@ const Home: FC = () => {
       <Route path="/" element={<CampaignList />} />
     </Routes>
   );
-}
+};
 
 export default Home;

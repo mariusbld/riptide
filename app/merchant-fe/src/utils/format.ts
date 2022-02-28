@@ -5,4 +5,4 @@ export const toDisplayStr = (pk: PublicKey) => {
   const top = str.substring(0, 4);
   const bottom = str.substring(str.length - 4, str.length);
   return `${top}...${bottom}`;
-}
+};
