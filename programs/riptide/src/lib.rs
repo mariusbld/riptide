@@ -7,7 +7,7 @@ use context::*;
 mod account;
 mod context;
 
-declare_id!("6rjN1JJZJQnGw5ppeN2ppXtvVpzq3mJbxNyDpiMaJ18H");
+declare_id!("371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL");
 
 #[program]
 pub mod riptide {

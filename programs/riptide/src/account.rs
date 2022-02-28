@@ -53,6 +53,7 @@ pub struct CampaignStats {
     pub prize_stats: Vec<PrizeStats>,
     pub running_sales_amount: u64,
     pub running_sales_count: u64,
+    pub created_ts: i64,
     pub start_ts: i64,
     pub stop_ts: i64,
 }
