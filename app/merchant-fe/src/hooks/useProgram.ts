@@ -1,7 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { createContext, useContext } from "react";
 
-export type CampaignStartType = "now" | "manual";
 export type CampaignEndType = "targetSalesReached" | "scheduledDate";
 export type CampaignId = PublicKey;
 
@@ -16,7 +15,6 @@ export interface PrizeData {
 
 export interface CampaignConfig {
   prizeData: PrizeData;
-  start: CampaignStartType;
   end: CampaignEndType;
   endDate?: Date;
   endSalesAmount?: number;
