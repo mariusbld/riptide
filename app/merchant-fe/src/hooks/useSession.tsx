@@ -36,12 +36,11 @@ export type SaveWallet = Function;
 export const SaveWalletContext = createContext<SaveWallet | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  console.log('Session Provider');
 
   const paymentSessionId = useQuery().get('paymentSessionId');
   const onboardSessionId = useQuery().get('onboardSessionId');
 
-  console.log("onboardSessionId", onboardSessionId);
+  // console.log("onboardSessionId", onboardSessionId);
 
   const [session, setSession] = useState<SessionContextState>({} as SessionContextState);
   const [token, setToken] = useState<string|undefined>(undefined);

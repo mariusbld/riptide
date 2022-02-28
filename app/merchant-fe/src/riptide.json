@@ -23,9 +23,9 @@
       ],
       "args": [
         {
-          "name": "prizeData",
+          "name": "config",
           "type": {
-            "defined": "PrizeData"
+            "defined": "CampaignConfig"
           }
         }
       ]
@@ -183,6 +183,11 @@
       "name": "crankCampaign",
       "accounts": [
         {
+          "name": "cranker",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "campaign",
           "isMut": true,
           "isSigner": false
@@ -211,12 +216,23 @@
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "recentBlockhashes",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
         {
           "name": "bump",
           "type": "u8"
+        },
+        {
+          "name": "purchase",
+          "type": {
+            "defined": "Purchase"
+          }
         }
       ]
     }
@@ -240,21 +256,21 @@
             }
           },
           {
-            "name": "prize",
+            "name": "state",
             "type": {
-              "defined": "PrizeData"
+              "defined": "CampaignState"
+            }
+          },
+          {
+            "name": "config",
+            "type": {
+              "defined": "CampaignConfig"
             }
           },
           {
             "name": "stats",
             "type": {
-              "defined": "Stats"
-            }
-          },
-          {
-            "name": "state",
-            "type": {
-              "defined": "CampaignState"
+              "defined": "CampaignStats"
             }
           }
         ]
@@ -270,27 +286,9 @@
           {
             "name": "amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "PrizeEntry",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "prize",
-            "type": {
-              "defined": "Prize"
-            }
           },
           {
             "name": "count",
-            "type": "u64"
-          },
-          {
-            "name": "odds",
             "type": "u64"
           }
         ]
@@ -305,7 +303,7 @@
             "name": "entries",
             "type": {
               "vec": {
-                "defined": "PrizeEntry"
+                "defined": "Prize"
               }
             }
           }
@@ -313,18 +311,88 @@
       }
     },
     {
-      "name": "Stats",
+      "name": "CampaignConfig",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "prizeAwardedCount",
+            "name": "prizeData",
             "type": {
-              "vec": "u64"
+              "defined": "PrizeData"
             }
           },
           {
-            "name": "totalVolume",
+            "name": "end",
+            "type": {
+              "defined": "CampaignEndType"
+            }
+          },
+          {
+            "name": "targetEndTs",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "targetSalesAmount",
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrizeStats",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "awardedCount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CampaignStats",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "prizeStats",
+            "type": {
+              "vec": {
+                "defined": "PrizeStats"
+              }
+            }
+          },
+          {
+            "name": "runningSalesAmount",
+            "type": "u64"
+          },
+          {
+            "name": "runningSalesCount",
+            "type": "u64"
+          },
+          {
+            "name": "startTs",
+            "type": "i64"
+          },
+          {
+            "name": "stopTs",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Purchase",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
             "type": "u64"
           }
         ]
@@ -342,6 +410,20 @@
           {
             "name": "token",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CampaignEndType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ScheduledDate"
+          },
+          {
+            "name": "TargetSalesReached"
           }
         ]
       }
@@ -382,6 +464,21 @@
     {
       "code": 6002,
       "name": "VaultAlreadyInitialized"
+    },
+    {
+      "code": 6003,
+      "name": "InternalErrorProbArray"
+    },
+    {
+      "code": 6004,
+      "name": "InternalErrorRandom"
+    },
+    {
+      "code": 6005,
+      "name": "NotImplemented"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "6rjN1JJZJQnGw5ppeN2ppXtvVpzq3mJbxNyDpiMaJ18H"
+  }
 }

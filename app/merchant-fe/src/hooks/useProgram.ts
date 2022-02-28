@@ -1,8 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 import { createContext, useContext } from "react";
 
-export type CampaignStartType = "now" | "scheduled" | "manual";
-export type CampaignEndType = "salesVolume" | "scheduled";
+export type CampaignStartType = "now" | "manual";
+export type CampaignEndType = "targetSalesReached" | "scheduledDate";
 export type CampaignId = PublicKey;
 
 export interface Prize {
@@ -10,31 +10,56 @@ export interface Prize {
   amount: number;
 }
 
+export interface PrizeData {
+  entries: Prize[];
+}
+
 export interface CampaignConfig {
+  prizeData: PrizeData;
   start: CampaignStartType;
-  startDate?: Date;
   end: CampaignEndType;
   endDate?: Date;
-  endSalesVolume?: number;
-  prizes: Prize[];
+  endSalesAmount?: number;
 }
 
 export interface CampaignStats {
-  prizesAwarded: number[];
+  prizeStats: number[];
+  runningSalesAmount: number;
+  runningSalesCount: number;
+  createdTime: Date;
+  startTime: Date;
+  endTime: Date;
+}
+
+export interface Vault {
+  mint: PublicKey,
+  token: PublicKey
+}
+
+export enum CampaignState {
+  None,
+  Initialized,
+  Started,
+  Stopped,
+  Revoked
 }
 
 export interface Campaign {
+  id: CampaignId;
+  owner: PublicKey;
+  vaults: Vault[];
+  state: CampaignState;
   config: CampaignConfig;
   stats: CampaignStats;
 }
 
 export interface ProgramContextState {
-  createCampaign(conf: CampaignConfig): CampaignId;
-  getCampaign(id: CampaignId): Campaign;
-  listCampaigns(): Campaign[];
-  startCampaign(id: CampaignId): void;
-  stopCampaign(id: CampaignId): void;
-  revokeCampaign(id: CampaignId): void;
+  createCampaign(conf: CampaignConfig): Promise<CampaignId>;
+  getCampaign(id: CampaignId): Promise<Campaign>;
+  listCampaigns(): Promise<Campaign[]>;
+  startCampaign(id: CampaignId): Promise<void>;
+  stopCampaign(id: CampaignId): Promise<void>;
+  revokeCampaign(id: CampaignId): Promise<void>;
 }
 
 export const ProgramContext = createContext<ProgramContextState>({} as ProgramContextState);

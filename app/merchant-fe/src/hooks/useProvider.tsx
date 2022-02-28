@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from "react";
-import EndpointContext from "../context/EndpointContext";
-import { getEndpointUrl } from "../lib/util";
 import { useWallet, WalletContextState } from '@solana/wallet-adapter-react';
 import { Provider, web3 } from '@project-serum/anchor';
 import { ConfirmOptions } from '@solana/web3.js';
+import { useEndpoint } from "./useEndpoint";
 
 const { Connection } = web3;
-
-export function useEndpointUrl() {
-  const endpoint = React.useContext(EndpointContext);
-  return getEndpointUrl(endpoint);
-}
 
 function toAnchorWallet(wallet: WalletContextState) {
   if (!wallet.connected) {
@@ -34,7 +28,7 @@ function toAnchorWallet(wallet: WalletContextState) {
 export function useProvider() {
   const [provider, setProvider] = useState<Nullable<Provider>>(null);
   const wallet = useWallet();
-  const endpoint = useEndpointUrl();
+  const endpoint = useEndpoint();
   
   useEffect(() => {
     const anchorWallet = toAnchorWallet(wallet);
@@ -45,7 +39,7 @@ export function useProvider() {
     const opts: ConfirmOptions = {
       preflightCommitment: "processed"
     };
-    const connection = new Connection(endpoint, opts.preflightCommitment);
+    const connection = new Connection(endpoint.url, opts.preflightCommitment);
     setProvider(new Provider(connection, anchorWallet, opts));
   }, [wallet, endpoint]);
 
