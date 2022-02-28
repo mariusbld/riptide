@@ -4,6 +4,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Route, Routes } from "react-router-dom";
 import CreateCampaign from "./CreateCampaign";
 import CampaignList from "./CampaignList";
+import CampaignDetails from "./CampaignDetails";
 
 const ConnectWallet: FC = () => <WalletMultiButton />;
 
@@ -14,7 +15,8 @@ const Home: FC = () => {
   }
   return (
     <Routes>
-      <Route path="/create" element={<CreateCampaign />} />
+      <Route path="/campaigns/create" element={<CreateCampaign />} />
+      <Route path="/campaigns/:id" element={<CampaignDetails />} />
       <Route path="/" element={<CampaignList />} />
     </Routes>
   );

@@ -1,23 +1,23 @@
-import React, { FC, useMemo, useState } from "react";
+import React, { FC, useEffect, useMemo, useState } from "react";
 import Wizard from "../components/Wizard";
-import DatePicker from "react-date-picker";
 import Button from "../components/Button";
 import {
   CampaignConfig,
-  CampaignEndType,
-  CampaignStartType,
   Prize,
   PrizeData,
   useProgram,
 } from "../hooks/useProgram";
+import { toCurrencyString } from "../utils/format";
+import { useNavigate } from "react-router-dom";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
+const DEFAULT_PRIZE_COUNT = 1;
+const DEAFULT_PRIZE_AMOUNT = 0;
 
 const defaultConfig: CampaignConfig = {
   prizeData: {
     entries: [],
   },
-  start: "manual",
   end: "targetSalesReached",
   endDate: undefined,
   endSalesAmount: DEFAULT_TARGET_SALES_AMOUNT_USDC,
@@ -28,82 +28,41 @@ interface StepParams {
   setConfig: (create: CampaignConfig) => void;
 }
 
-const Step1Start: FC<StepParams> = ({ config, setConfig }) => {
-  const setStart = (start: CampaignStartType) =>
-    setConfig({ ...config, start });
-  const startOptions: { label: string; value: CampaignStartType }[] = [
-    { label: "Now", value: "now" },
-    { label: "Manual", value: "manual" },
-  ];
-  return (
-    <>
-      <h2>Campaign Starts</h2>
-      <div>
-        {startOptions.map(({ label, value }) => (
-          <label key={value}>
-            <input
-              name="start"
-              type="checkbox"
-              value={value}
-              onChange={() => setStart(value)}
-              checked={config.start === value}
-            />
-            {label}
-          </label>
-        ))}
-      </div>
-    </>
-  );
-};
-
-const Step2Ends: FC<StepParams> = ({ config, setConfig }) => {
-  const setEnd = (end: CampaignEndType) => setConfig({ ...config, end });
-  const setEndDate = (targetEndDate: Date) =>
-    setConfig({ ...config, endDate: targetEndDate });
+const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
   const setEndSalesAmount = (endSalesAmount: number) =>
     setConfig({ ...config, endSalesAmount });
-  const endOptions: { label: string; value: CampaignEndType }[] = [
-    { label: "Spefici Date", value: "scheduledDate" },
-    { label: "When Sales Amount is Reached", value: "targetSalesReached" },
-  ];
+
   return (
     <>
-      <h2>Campaign Ends</h2>
-      <div>
-        {endOptions.map(({ label, value }) => (
-          <label key={value}>
-            <input
-              name="start"
-              type="checkbox"
-              value={value}
-              onChange={() => setEnd(value)}
-              checked={config.end === value}
-            />
-            {label}
-          </label>
-        ))}
-      </div>
-      {config.end === "targetSalesReached" && (
-        <label>
-          <input
-            type={"number"}
-            onChange={(e) => setEndSalesAmount(parseInt(e.target.value))}
-            value={config.endSalesAmount}
-          />
-          USDC
-        </label>
-      )}
-      {config.end === "scheduledDate" && (
-        <DatePicker onChange={setEndDate} value={config.endDate} />
-      )}
+      <h2>What is your sales volume goal for this campaign?</h2>
+      <p>When this sales volume target is reached, the campaign ends.</p>
+      <label>
+        <input
+          type={"number"}
+          onChange={(e) => setEndSalesAmount(parseInt(e.target.value))}
+          value={config.endSalesAmount}
+        />{" "}
+        USDC
+      </label>
     </>
   );
 };
 
 const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
-  const [count, setCount] = useState(1);
-  const [amount, setAmount] = useState(0);
+  const [count, setCount] = useState(DEFAULT_PRIZE_COUNT);
+  const [amount, setAmount] = useState(DEAFULT_PRIZE_AMOUNT);
   const valid = useMemo(() => count > 0 && amount > 0, [count, amount]);
+
+  const handleAdd = () => {
+    const prize: Prize = { count, amount };
+    onAdd(prize);
+    clear();
+  };
+
+  const clear = () => {
+    setCount(DEFAULT_PRIZE_COUNT);
+    setAmount(DEAFULT_PRIZE_AMOUNT);
+  };
 
   return (
     <div>
@@ -123,14 +82,14 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
         />
         {" USDC "}
       </label>
-      <Button disabled={!valid} onClick={() => onAdd({ count, amount })}>
+      <Button disabled={!valid} onClick={handleAdd}>
         {"Add >>"}
       </Button>
     </div>
   );
 };
 
-const Step3Prizes: FC<StepParams> = ({ config, setConfig }) => {
+const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
   const setConfigPrizeEntries = (entries: Prize[]) =>
     setConfig({
       ...config,
@@ -145,15 +104,16 @@ const Step3Prizes: FC<StepParams> = ({ config, setConfig }) => {
   };
   const removePrize = (idx: number) => {
     const entries = [...config.prizeData.entries];
-    entries.splice(idx);
+    entries.splice(idx, 1);
     setConfigPrizeEntries(entries);
   };
   const totalAmount = getTotalAmount(config.prizeData);
+  const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
   return (
     <>
       <h2>Prizes</h2>
       <div>
-        {config.prizeData.entries.map((prize, idx) => (
+        {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
           <div key={idx}>
             {prize.count}
             {" X "}
@@ -175,49 +135,51 @@ const Step3Prizes: FC<StepParams> = ({ config, setConfig }) => {
 
 const Step4Confirm: FC<StepParams> = ({ config }) => {
   const totalAmount = getTotalAmount(config.prizeData);
+  const percentOfSales = (totalAmount * 100) / config.endSalesAmount!;
   return (
     <>
       <h2>Confirm Campaign</h2>
       <div>
-        <h3>Start</h3>
-        <div>{config.start}</div>
-        <h3>End</h3>
-        <div>{config.end}</div>
+        <h3>Target Sales Volume</h3>
+        <div>{toCurrencyString(config.endSalesAmount!)} USDC</div>
         <h3>Prizes</h3>
         <div>
           {config.prizeData.entries.map((prize, idx) => (
             <div key={idx}>
               {prize.count}
-              {" X "}${prize.amount}
+              {" X "}${toCurrencyString(prize.amount)}
               {" = "}
-              {prize.count * prize.amount}
+              {toCurrencyString(prize.count * prize.amount)}
               {" USDC "}
             </div>
           ))}
         </div>
-        <h3>Deposit Funds</h3>
-        <div>
-          {"Total: "}
-          {totalAmount}
-          {" USDC "}
-        </div>
+        <h3>Campaign Budget</h3>
+        <div>{`Total: ${toCurrencyString(totalAmount)} USDC`}</div>
+        <div>{`Percent of Sales Volume: ${percentOfSales.toFixed(2)} %`}</div>
       </div>
     </>
   );
 };
 
 const CreateCampaign: FC = () => {
+  const navigate = useNavigate();
   const [config, setConfig] = useState<CampaignConfig>(defaultConfig);
   const program = useProgram();
-  const handleConfirm = async () => {
-    await program.createCampaign(config);
-    console.log("Done!");
+  const handleCreate = async () => {
+    try {
+      const campaignId = await program.createCampaign(config);
+      alert("Success!");
+      navigate(`/campaigns/${campaignId}`);
+    } catch {
+      alert("Encountered an error while trying to create the campaign!");
+    }
   };
+
   return (
-    <Wizard onConfirm={handleConfirm}>
-      <Step1Start config={config} setConfig={setConfig} />
-      <Step2Ends config={config} setConfig={setConfig} />
-      <Step3Prizes config={config} setConfig={setConfig} />
+    <Wizard onConfirm={handleCreate}>
+      <Step1SalesGoal config={config} setConfig={setConfig} />
+      <Step2Prizes config={config} setConfig={setConfig} />
       <Step4Confirm config={config} setConfig={setConfig} />
     </Wizard>
   );

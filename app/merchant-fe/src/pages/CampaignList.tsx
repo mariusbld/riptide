@@ -2,7 +2,7 @@ import React, { FC, useEffect, useMemo, useState } from "react";
 import { useProgram, Campaign, CampaignState } from "../hooks/useProgram";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
-import { toDisplayStr as toDisplayString } from "../utils/format";
+import { toDisplayString } from "../utils/format";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
   return (
@@ -59,7 +59,7 @@ const CampaignList: FC = () => {
 
   return (
     <div>
-      <Link to={"/create"}>Create Campaign</Link>
+      <Link to={"/campaigns/create"}>Create Campaign</Link>
       <h3>Active Campaigns</h3>
       {activeCampaigns.map((c) => (
         <Campaign key={c.id.toString()} campaign={c} />

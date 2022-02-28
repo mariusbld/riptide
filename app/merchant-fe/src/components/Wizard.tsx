@@ -5,18 +5,24 @@ const Wizard: FC<{ onConfirm: () => void; children: ReactNode }> = ({
   children,
 }) => {
   const [step, setStep] = useState<number>(0);
-  const childrenArray = React.Children.toArray(children);
-  const childrenCount = React.Children.count(children);
-  const activeChild = childrenArray[step];
+  const childrenArray = React.useMemo(
+    () => React.Children.toArray(children),
+    [children]
+  );
+  const childrenCount = React.useMemo(
+    () => React.Children.count(children),
+    [children]
+  );
+  const activeChild = React.useMemo(
+    () => childrenArray[step],
+    [childrenArray, step]
+  );
   const isFirstStep = step === 0;
   const isLastStep = step === childrenCount - 1;
 
-  const handleNext = () => {
+  const handleNext = () =>
     setStep((curr) => Math.min(curr + 1, childrenCount - 1));
-  };
-  const handlePrev = () => {
-    setStep((curr) => Math.max(0, curr - 1));
-  };
+  const handlePrev = () => setStep((curr) => Math.max(0, curr - 1));
 
   return (
     <div>
