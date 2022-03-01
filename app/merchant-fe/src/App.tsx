@@ -1,23 +1,21 @@
-import React, { FC, ReactNode, useMemo } from "react";
 import { WalletProvider } from "@solana/wallet-adapter-react";
-import { ConnectionProvider } from "./contexts/ConnectionProvider";
+import {
+  WalletModalProvider
+} from "@solana/wallet-adapter-react-ui";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter,
+  TorusWalletAdapter
 } from "@solana/wallet-adapter-wallets";
-import { ThemeProvider } from "./contexts/ThemeProvider";
-import { GlobalStyles } from "./components/globalStyles";
-import { EndpointProvider } from "./contexts/EndpointProvider";
-import { useDarkMode } from "./hooks/useDarkMode";
-import { DarkModeProvider } from "./contexts/DarkModeProvider";
+import React, { FC, ReactNode, useMemo } from "react";
 import Button from "./components/Button";
-import Home from "./pages/Home";
+import { GlobalStyles } from "./components/globalStyles";
+import { ConnectionProvider } from "./contexts/ConnectionProvider";
+import { DarkModeProvider } from "./contexts/DarkModeProvider";
+import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
-import {
-  WalletModalProvider,
-  WalletDisconnectButton,
-  WalletMultiButton,
-} from "@solana/wallet-adapter-react-ui";
+import { ThemeProvider } from "./contexts/ThemeProvider";
+import { useDarkMode } from "./hooks/useDarkMode";
+import Home from "./pages/Home";
 
 // require('./app.scss');
 

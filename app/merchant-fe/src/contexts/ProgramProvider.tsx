@@ -1,14 +1,19 @@
-import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
-import { Keypair, SystemProgram } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
 import { Idl, Program } from "@project-serum/anchor";
 import {
-  CampaignId,
-  CampaignConfig,
-  ProgramContext,
-  Campaign,
-  ProgramContextState,
-  CampaignState,
+  getAccount,
+  getAssociatedTokenAddress, TOKEN_PROGRAM_ID
+} from "@solana/spl-token";
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY
+} from "@solana/web3.js";
+import React, { FC, ReactNode, useMemo } from "react";
+import {
+  Campaign, CampaignConfig, CampaignId, CampaignState,
+  CampaignWithFunds, ProgramContext, ProgramContextState, Vault, VaultWithFunds
 } from "../hooks/useProgram";
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
@@ -43,10 +48,16 @@ export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
 };
 
 class UnavailableClient implements ProgramContextState {
+  addCampaignFunds(id: PublicKey, amount: number): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  withdrawCampaignFunds(id: PublicKey, vault: Vault): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
   createCampaign(conf: CampaignConfig): Promise<CampaignId> {
     throw new Error("Program unavailable");
   }
-  getCampaign(id: CampaignId): Promise<Campaign> {
+  getCampaign(id: CampaignId): Promise<CampaignWithFunds> {
     throw new Error("Program unavailable");
   }
   listCampaigns(): Promise<Campaign[]> {
@@ -66,10 +77,68 @@ class UnavailableClient implements ProgramContextState {
 class Client implements ProgramContextState {
   program: Program;
   provider: anchor.Provider;
+  wallet: PublicKey;
+
+  static CAMPAIGN_PDA_SEED = "campaign";
+  static USDC_MINT = new PublicKey(
+    "CwP87NfhNJuwHpbGt8yBZLS1T8uTSGkf9tDJjqQjTwrj"
+  );
 
   constructor(program: Program) {
     this.program = program;
     this.provider = program.provider;
+    this.wallet = program.provider.wallet.publicKey;
+  }
+
+  async getPda(): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [Buffer.from(Client.CAMPAIGN_PDA_SEED)],
+      this.program.programId
+    );
+  }
+
+  async addCampaignFunds(
+    campaignId: CampaignId,
+    amount: number
+  ): Promise<void> {
+    const srcToken = await getAssociatedTokenAddress(
+      Client.USDC_MINT,
+      this.provider.wallet.publicKey
+    );
+    const vaultTokenAccount = Keypair.generate();
+    const [pda, bump] = await this.getPda();
+    await this.program.rpc.addCampaignFunds(bump, new anchor.BN(amount), {
+      accounts: {
+        campaign: campaignId,
+        pda,
+        owner: this.provider.wallet.publicKey,
+        srcToken,
+        vaultToken: vaultTokenAccount.publicKey,
+        mint: Client.USDC_MINT,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        rent: SYSVAR_RENT_PUBKEY,
+      },
+      signers: [vaultTokenAccount],
+    });
+  }
+
+  async withdrawCampaignFunds(
+    campaign: PublicKey,
+    vault: Vault
+  ): Promise<void> {
+    const [pda, bump] = await this.getPda();
+    const dstToken = await getAssociatedTokenAddress(vault.mint, this.wallet);
+    await this.program.rpc.withdrawCampaignFunds(bump, {
+      accounts: {
+        campaign,
+        owner: this.wallet,
+        pda,
+        dstToken,
+        vaultToken: vault.token,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+    });
   }
 
   async createCampaign(config: CampaignConfig): Promise<CampaignId> {
@@ -97,9 +166,19 @@ class Client implements ProgramContextState {
     );
     return campaignAccount.publicKey;
   }
-  async getCampaign(id: CampaignId): Promise<Campaign> {
-    throw new Error("Method not implemented.");
+
+  async getCampaign(id: CampaignId): Promise<CampaignWithFunds> {
+    const campaignAccount = await this.program.account.campaign.fetch(id);
+    const campaign = Client.campaignFromAccount(id, campaignAccount);
+    const vaultFunds: VaultWithFunds[] = [];
+    for (const { mint, token } of campaign.vaults) {
+      const vaultToken = await getAccount(this.provider.connection, token);
+      const amount = Number(vaultToken.amount);
+      vaultFunds.push({ mint, token, amount });
+    }
+    return { ...campaign, vaultFunds };
   }
+
   async listCampaigns(): Promise<Campaign[]> {
     const campaignAccounts = await this.program.account.campaign.all([
       {
@@ -109,34 +188,53 @@ class Client implements ProgramContextState {
         },
       },
     ]);
-    return campaignAccounts.map(Client.toCampaign);
-  }
-  async startCampaign(id: CampaignId): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  async stopCampaign(id: CampaignId): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  async revokeCampaign(id: CampaignId): Promise<void> {
-    throw new Error("Method not implemented.");
+    return campaignAccounts.map((e) =>
+      Client.campaignFromAccount(e.publicKey, e.account)
+    );
   }
 
-  static toCampaign(a: any): Campaign {
+  async startCampaign(id: CampaignId): Promise<void> {
+    await this.program.rpc.startCampaign({
+      accounts: {
+        owner: this.wallet,
+        campaign: id,
+      },
+    });
+  }
+
+  async stopCampaign(id: CampaignId): Promise<void> {
+    await this.program.rpc.stopCampaign({
+      accounts: {
+        owner: this.wallet,
+        campaign: id,
+      },
+    });
+  }
+
+  async revokeCampaign(id: CampaignId): Promise<void> {
+    await this.program.rpc.revokeCampaign({
+      accounts: {
+        owner: this.wallet,
+        campaign: id,
+      },
+    });
+  }
+
+  static campaignFromAccount(id: PublicKey, a: any): Campaign {
     return {
-      id: a.publicKey,
-      owner: a.account.owner,
-      vaults: [],
-      state: Client.toCampaignState(a.account.state),
+      id,
+      owner: a.owner,
+      vaults: a.vaults,
+      state: Client.toCampaignState(a.state),
       config: {
         prizeData: {
-          entries: a.account.config.prizeData.entries.map((e: any) => ({
+          entries: a.config.prizeData.entries.map((e: any) => ({
             count: e.count.toNumber(),
             amount: e.amount.toNumber(),
           })),
         },
-        start: "manual",
         end: "targetSalesReached",
-        endSalesAmount: a.account.config.targetSalesAmount,
+        endSalesAmount: a.config.targetSalesAmount,
       },
       stats: {
         prizeStats: [],

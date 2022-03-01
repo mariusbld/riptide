@@ -1,14 +1,14 @@
-import React, { FC, useEffect, useMemo, useState } from "react";
-import Wizard from "../components/Wizard";
+import React, { FC, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
+import Wizard from "../components/Wizard";
 import {
   CampaignConfig,
   Prize,
   PrizeData,
-  useProgram,
+  useProgram
 } from "../hooks/useProgram";
 import { toCurrencyString } from "../utils/format";
-import { useNavigate } from "react-router-dom";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
