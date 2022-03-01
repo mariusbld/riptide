@@ -34,6 +34,12 @@ export interface Vault {
   token: PublicKey;
 }
 
+export interface VaultFunds {
+  amount: number;
+}
+
+export type VaultWithFunds = Vault & VaultFunds;
+
 export enum CampaignState {
   None,
   Initialized,
@@ -51,9 +57,17 @@ export interface Campaign {
   stats: CampaignStats;
 }
 
+export interface CampaignFunds {
+  vaultFunds: VaultWithFunds[];
+}
+
+export type CampaignWithFunds = Campaign & CampaignFunds;
+
 export interface ProgramContextState {
   createCampaign(conf: CampaignConfig): Promise<CampaignId>;
-  getCampaign(id: CampaignId): Promise<Campaign>;
+  getCampaign(id: CampaignId): Promise<CampaignWithFunds>;
+  addCampaignFunds(id: CampaignId, amount: number): Promise<void>;
+  withdrawCampaignFunds(id: CampaignId, vault: Vault): Promise<void>;
   listCampaigns(): Promise<Campaign[]>;
   startCampaign(id: CampaignId): Promise<void>;
   stopCampaign(id: CampaignId): Promise<void>;
