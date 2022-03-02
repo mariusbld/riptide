@@ -1,6 +1,20 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
-// use solana_program::sysvar::recent_blockhashes::Entry;
+use arrayref::array_ref;
 use std::result::Result as ResultGeneric;
+
+//
+// slot_hash account is an Vec of SlotHash entries
+// https://github.com/solana-labs/solana/blob/master/sdk/program/src/slot_hashes.rs
+// pub type SlotHash = (Slot, Hash);
+//
+// https://github.com/solana-labs/solana/blob/master/sdk/program/src/hash.rs
+// pub const HASH_BYTES: usize = 32;
+// pub struct Hash([u8; HASH_BYTES]);
+
+const SLOT_HASH_VEC_PREFIX_BYTES: usize = 8;
+const SLOT_HASH_ENTRY_SLOT_BYTES: usize = 8;
+const SLOT_HASH_SKIP_BYTES: usize = SLOT_HASH_VEC_PREFIX_BYTES + SLOT_HASH_ENTRY_SLOT_BYTES;
+const U64_SIZE_BYTES: usize = 8;
 
 #[error]
 pub enum RiptideError {
@@ -12,7 +26,7 @@ pub enum RiptideError {
     NotImplemented,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone, Debug)]
 pub struct Prize {
     pub amount: u64,
     pub count: u64,
@@ -50,12 +64,12 @@ pub struct PrizeStats {
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct CampaignStats {
-    pub prize_stats: Vec<PrizeStats>,
-    pub running_sales_amount: u64,
-    pub running_sales_count: u64,
-    pub created_ts: i64,
-    pub start_ts: i64,
-    pub stop_ts: i64,
+    prize_stats: Vec<PrizeStats>,
+    running_sales_amount: u64,
+    running_sales_count: u64,
+    created_ts: i64,
+    start_ts: i64,
+    stop_ts: i64,
 }
 
 impl CampaignStats {
@@ -76,6 +90,12 @@ impl CampaignStats {
             let avg_purchase_amount = self.running_sales_amount / self.running_sales_count;
             return remaining_amount / avg_purchase_amount;
         }
+    }
+    pub fn award_prize(&mut self, prize_idx: usize) {
+        self.prize_stats[prize_idx].awarded_count += 1;
+    }
+    pub fn get_awarded_prize_count(&self, prize_idx: usize) -> u64 {
+        return self.prize_stats[prize_idx].awarded_count;
     }
 }
 
@@ -204,6 +224,7 @@ impl Campaign {
         for (prize_idx, prize) in self.config.prize_data.entries.iter().enumerate() {
             let prob = winning_prob[prize_idx];
             if chance <= prob {
+                self.stats.award_prize(prize_idx);
                 return Ok(Some(prize.clone()));
             }
         }
@@ -218,33 +239,38 @@ impl Campaign {
         let remaining_prize_count = self.get_remaining_prize_count();
         let mut winning_prob: Vec<f64> = vec![0.0; remaining_prize_count.len()];
         for (idx, &count) in remaining_prize_count.iter().enumerate() {
-            winning_prob[idx] = (count as f64) / (remaining_purchases as f64);
+            if count == 0 {
+                winning_prob[idx] = 0.0;
+            } else if remaining_purchases == 0 {
+                winning_prob[idx] = 1.0;
+            } else {
+                winning_prob[idx] = (count as f64) / (remaining_purchases as f64);
+            }
         }
         return winning_prob;
     }
     fn get_remaining_prize_count(&self) -> Vec<u64> {
         let mut remaining_prize_count = vec![0; self.config.prize_data.entries.len()];
         for (idx, prize) in self.config.prize_data.entries.iter().enumerate() {
-            remaining_prize_count[idx] = prize.count - self.stats.prize_stats[idx].awarded_count;
+            remaining_prize_count[idx] = prize.count - self.stats.get_awarded_prize_count(idx);
         }
         return remaining_prize_count;
     }
 }
 
 pub struct Random {
-    pub hashes: RecentBlockhashes,
+    f64val: f64,
 }
 
 impl Random {
-    pub fn new(hashes: RecentBlockhashes) -> Random {
-        return Random { hashes: hashes };
+    pub fn new(slot_hashes: &UncheckedAccount) -> Random {
+        let data = slot_hashes.data.borrow();
+        let most_recent = array_ref![data, SLOT_HASH_SKIP_BYTES, U64_SIZE_BYTES];
+        let u64val = u64::from_le_bytes(*most_recent);
+        let f64val = (u64val as f64) / (u64::MAX as f64);
+        return Random { f64val: f64val };
     }
     pub fn float64(&self) -> f64 {
-        let bytes = self.hashes[0].blockhash.to_bytes();
-        let ival = i64::from_ne_bytes([
-            bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-        ]);
-        let fval = (ival.abs() as f64) / (i64::MAX as f64);
-        return fval;
+        return self.f64val;
     }
 }

@@ -26,6 +26,17 @@ describe('riptide', () => {
   let mint: anchor.web3.PublicKey;
   let pda: anchor.web3.PublicKey;
   let bump: number;
+  
+  const prize1 = newPrize(1, 100);
+  const prize2 = newPrize(5, 50);
+  const prizeData = { entries: [prize1, prize2] };
+
+  const totalPrizeAmount = prizeData.entries.reduce(
+    (sum, curr) => sum + curr.count.toNumber() * curr.amount.toNumber(), 0);
+
+  const TARGET_SALES_AMOUNT = 500;
+  const PURCHASE_AMOUNT = 50;
+  const NUM_PURCHASES = TARGET_SALES_AMOUNT / PURCHASE_AMOUNT;
 
   before(async () => {
     const airDrop = await program.provider.connection.requestAirdrop(owner.publicKey, 1e10);
@@ -38,11 +49,8 @@ describe('riptide', () => {
   });
   
   it('init campaign', async() => {
-    const prize1 = newPrize(1, 100);
-    const prize2 = newPrize(5, 50);
-    const prizeData = { entries: [prize1, prize2] };
     const end = { targetSalesReached: {} }
-    const targetSalesAmount = new anchor.BN(500);
+    const targetSalesAmount = new anchor.BN(TARGET_SALES_AMOUNT);
     const targetEndTs = null;
     const config = { prizeData, end, targetSalesAmount, targetEndTs };
     await program.rpc.initCampaign(config, {
@@ -65,7 +73,7 @@ describe('riptide', () => {
 
   it('add funds', async() => {
     const vaultToken = anchor.web3.Keypair.generate();
-    const amount = new anchor.BN(1000);
+    const amount = new anchor.BN(totalPrizeAmount);
     const srcToken = await createAssociatedTokenAccount(conn, owner, mint, owner.publicKey);
     await mintTo(conn, owner, mint, srcToken, owner, amount.toNumber());
 
@@ -102,7 +110,7 @@ describe('riptide', () => {
     expect(campaign.state).to.eql({ started: {} });
   });
 
-  it ('stop campaign', async () => {
+  xit ('stop campaign', async () => {
     await program.rpc.stopCampaign({
       accounts: {
         owner: owner.publicKey,
@@ -112,7 +120,7 @@ describe('riptide', () => {
     });
   });
 
-  it ('revoke campaign', async () => {
+  xit ('revoke campaign', async () => {
     await program.rpc.revokeCampaign({
       accounts: {
         owner: owner.publicKey,
@@ -122,7 +130,7 @@ describe('riptide', () => {
     });
   });
 
-  it('withdraw funds', async() => {
+  xit('withdraw funds', async() => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
     const initialVault = await getAccount(conn, vaultToken);
@@ -146,22 +154,40 @@ describe('riptide', () => {
     expect(Number(dst.amount)).to.equal(Number(initialVault.amount));
   });
 
-  xit('crank campaign', async() => {
+  it('crank campaign', async() => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
-    const purchase = { amount: new anchor.BN(50) }
-    await program.rpc.crankCampaign(bump, purchase, {
-      accounts: {
-        cranker: cranker.publicKey,
-        campaign: campaignKeypair.publicKey,
-        pda,
-        vaultToken,
-        winnerToken,
-        crankerToken,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        recentBlockhashes: anchor.web3.SYSVAR_RECENT_BLOCKHASHES_PUBKEY
-      },
-      signers: [cranker]
-    });
+    const amount = new anchor.BN(PURCHASE_AMOUNT);
+    const purchase = { amount };
+
+    for (let i = 0; i < NUM_PURCHASES; i++) {
+      await program.rpc.crankCampaign(bump, purchase, {
+        accounts: {
+          cranker: cranker.publicKey,
+          campaign: campaignKeypair.publicKey,
+          pda,
+          vaultToken,
+          winnerToken,
+          crankerToken,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          slotHashes: anchor.web3.SYSVAR_SLOT_HASHES_PUBKEY,
+        },
+        signers: [cranker]
+      });
+    }
+
+    let refreshCampaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
+    expect(refreshCampaign.stats.prizeStats.length).to.eql(prizeData.entries.length);
+    const prizesCount = prizeData.entries.map(e => e.count.toNumber());
+    const awardedCount = refreshCampaign.stats.prizeStats.map(e => e.awardedCount.toNumber());
+    expect(prizesCount, "All prizes were awarded").to.eql(awardedCount);
+    const vault = await getAccount(conn, vaultToken);
+    expect(Number(vault.amount), "All funds were awarded").to.equal(0);
+    const winnerAccount = await getAccount(conn, winnerToken);
+    const winnerPrizeAmount = totalPrizeAmount * 0.9;
+    const crankerPrizeAmount = totalPrizeAmount - winnerPrizeAmount;
+    expect(Number(winnerAccount.amount), "Winner got their prize").to.equal(winnerPrizeAmount);
+    const crankerAccount = await getAccount(conn, crankerToken);
+    expect(Number(crankerAccount.amount), "Cranker got paid").to.equal(crankerPrizeAmount);
   });
 });

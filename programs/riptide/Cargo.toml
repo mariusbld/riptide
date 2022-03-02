@@ -18,4 +18,5 @@ default = []
 [dependencies]
 anchor-lang = "0.20.1"
 anchor-spl = "0.20.1"
+arrayref = "~0.3.6"
 solana-program = "1.8.5"
