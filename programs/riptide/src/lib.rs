@@ -7,7 +7,9 @@ use context::*;
 mod account;
 mod context;
 
-declare_id!("371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL");
+const SLOT_HASHES: &str = "SysvarS1otHashes111111111111111111111111111";
+
+declare_id!("2u551QiRFv6YjTFVCN3sjMBnaPKXqxKLmJKyiV69SKau");
 
 #[program]
 pub mod riptide {
@@ -59,11 +61,13 @@ pub mod riptide {
         bump: u8,
         purchase: Purchase,
     ) -> ProgramResult {
+        let slot_hashes = &ctx.accounts.slot_hashes;
+        require!(
+            slot_hashes.key().to_string() == SLOT_HASHES,
+            ProgramError::InvalidAccountData
+        );
+        let random = Random::new(slot_hashes);
         let campaign = &mut ctx.accounts.campaign;
-        let recent_blockhashes =
-            RecentBlockhashes::from_account_info(ctx.accounts.recent_blockhashes.as_ref())?;
-        let random = Random::new(recent_blockhashes);
-        //let random = Random::new(ctx.accounts.recent_blockhashes.account);
         let prize = match campaign.crank(purchase, random) {
             Ok(prize_opt) => match prize_opt {
                 None => return Ok(()),
@@ -71,6 +75,7 @@ pub mod riptide {
             },
             Err(e) => return Err(e),
         };
+
         let winner_amount = prize.amount * 9 / 10; // 90% goes to the winner
         let cranker_amount = prize.amount - winner_amount; // remaining goes to the cranker as payment
         let seeds = &[&CAMPAIGN_PDA_SEED[..], &[bump]];

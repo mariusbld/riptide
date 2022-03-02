@@ -111,7 +111,7 @@ pub struct CrankCampaign<'info> {
     #[account(mut)]
     pub cranker_token: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
-    pub recent_blockhashes: Sysvar<'info, RecentBlockhashes>,
+    pub slot_hashes: UncheckedAccount<'info>,
 }
 
 impl<'info> CrankCampaign<'info> {
