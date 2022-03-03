@@ -1,4 +1,6 @@
 import React, { FC, ReactNode, useState } from "react";
+import Button from "./Button";
+import Hr from "./Hr";
 
 const Wizard: FC<{ onConfirm: () => void; children: ReactNode }> = ({
   onConfirm,
@@ -27,12 +29,13 @@ const Wizard: FC<{ onConfirm: () => void; children: ReactNode }> = ({
   return (
     <div>
       {activeChild}
-      <div>
-        {!isFirstStep && <button onClick={handlePrev}>Prev</button>}
+      <Hr />
+      <div className="md:flex items-center justify-end">
+        {!isFirstStep && <div className="pr-2"><Button onClick={handlePrev}>{"< Back"}</Button></div>}
         {isLastStep ? (
-          <button onClick={onConfirm}>Confirm</button>
+          <Button onClick={onConfirm}>Confirm</Button>
         ) : (
-          <button onClick={handleNext}>Next</button>
+          <Button onClick={handleNext}>{"Next >"}</Button>
         )}
       </div>
     </div>

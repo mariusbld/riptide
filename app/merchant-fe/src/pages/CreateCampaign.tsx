@@ -9,6 +9,8 @@ import {
   useProgram
 } from "../hooks/useProgram";
 import { toCurrencyString } from "../utils/format";
+import { Link } from "react-router-dom";
+import NumberInput from "../components/NumberInput";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
@@ -34,16 +36,17 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
 
   return (
     <>
-      <h2>What is your sales volume goal for this campaign?</h2>
-      <p>When this sales volume target is reached, the campaign ends.</p>
-      <label>
+      <p className="pb-2">What is your sales volume goal for this campaign?</p>
+      {/* <p>Campaign ends when this sales amount is reached.</p> */}
+      <div className="w-40"><NumberInput /></div>
+      {/* <label>
         <input
           type={"number"}
           onChange={(e) => setEndSalesAmount(parseInt(e.target.value))}
           value={config.endSalesAmount}
         />{" "}
         USDC
-      </label>
+      </label> */}
     </>
   );
 };
@@ -65,25 +68,27 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
   };
 
   return (
-    <div>
-      <label>
+    <div className="flex flex-row items-end">
+      <div className="w-40"><NumberInput label="Number of prizes" /></div>
+      {/* <label>
         <input
           type="number"
           onChange={(e) => setCount(parseInt(e.target.value))}
           value={count}
         />
-      </label>
-      {" X "}
-      <label>
+      </label> */}
+      <div className="px-4 mb-1">{" X "}</div>
+      <div className="w-40 pr-4"><NumberInput label="Prize amount" /></div>
+      {/* <label>
         <input
           type="number"
           onChange={(e) => setAmount(parseInt(e.target.value))}
           value={amount}
         />
         {" USDC "}
-      </label>
+      </label> */}
       <Button disabled={!valid} onClick={handleAdd}>
-        {"Add >>"}
+        {"Add +"}
       </Button>
     </div>
   );
@@ -111,7 +116,6 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
   const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
   return (
     <>
-      <h2>Prizes</h2>
       <div>
         {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
           <div key={idx}>
@@ -124,7 +128,7 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
         ))}
       </div>
       <AddPrize onAdd={addPrize} />
-      <div>
+      <div className="py-4">
         {"Total: "}
         {totalAmount}
         {" USDC"}
@@ -177,11 +181,18 @@ const CreateCampaign: FC = () => {
   };
 
   return (
-    <Wizard onConfirm={handleCreate}>
-      <Step1SalesGoal config={config} setConfig={setConfig} />
-      <Step2Prizes config={config} setConfig={setConfig} />
-      <Step4Confirm config={config} setConfig={setConfig} />
-    </Wizard>
+    <div>
+      <Link className="text-secondary-light dark:text-secondary-dark text-lg" to={{pathname: "/campaigns"}}>
+        {"< All campaigns"}
+      </Link>
+      <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate my-6">Setup Rewards Campaign</h2>
+      <div className="border-t border-zinc-400/50 mb-6"></div>
+      <Wizard onConfirm={handleCreate}>
+        <Step1SalesGoal config={config} setConfig={setConfig} />
+        <Step2Prizes config={config} setConfig={setConfig} />
+        <Step4Confirm config={config} setConfig={setConfig} />
+      </Wizard>
+    </div>
   );
 };
 
