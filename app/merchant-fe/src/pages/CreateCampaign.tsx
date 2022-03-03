@@ -11,6 +11,7 @@ import {
 import { toCurrencyString } from "../utils/format";
 import { Link } from "react-router-dom";
 import NumberInput from "../components/NumberInput";
+import Hr from "../components/Hr";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
@@ -38,15 +39,9 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
     <>
       <p className="pb-2">What is your sales volume goal for this campaign?</p>
       {/* <p>Campaign ends when this sales amount is reached.</p> */}
-      <div className="w-40"><NumberInput /></div>
-      {/* <label>
-        <input
-          type={"number"}
-          onChange={(e) => setEndSalesAmount(parseInt(e.target.value))}
-          value={config.endSalesAmount}
-        />{" "}
-        USDC
-      </label> */}
+      <div className="w-40">
+        <NumberInput suffix="USDC" value={config.endSalesAmount} onChange={setEndSalesAmount} />
+      </div>
     </>
   );
 };
@@ -69,25 +64,14 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
 
   return (
     <div className="flex flex-row items-end">
-      <div className="w-40"><NumberInput label="Number of prizes" /></div>
-      {/* <label>
-        <input
-          type="number"
-          onChange={(e) => setCount(parseInt(e.target.value))}
-          value={count}
-        />
-      </label> */}
+      <div className="w-40">
+        <NumberInput integer label="Number of prizes" value={count} onChange={setCount} />
+      </div>
       <div className="px-4 mb-1">{" X "}</div>
-      <div className="w-40 pr-4"><NumberInput label="Prize amount" /></div>
-      {/* <label>
-        <input
-          type="number"
-          onChange={(e) => setAmount(parseInt(e.target.value))}
-          value={amount}
-        />
-        {" USDC "}
-      </label> */}
-      <Button disabled={!valid} onClick={handleAdd}>
+      <div className="w-40 pr-4">
+        <NumberInput label="Prize amount" suffix="USDC" value={amount} onChange={setAmount} />
+      </div>
+      <Button small disabled={!valid} onClick={handleAdd}>
         {"Add +"}
       </Button>
     </div>
@@ -114,25 +98,32 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
   };
   const totalAmount = getTotalAmount(config.prizeData);
   const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
+  const isEmpty = !config.prizeData.entries.length;
   return (
     <>
-      <div>
-        {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
-          <div key={idx}>
-            {prize.count}
-            {" X "}
-            {prize.amount.toFixed(2)}
-            {" USDC "}
-            <Button onClick={() => removePrize(idx)}>Remove</Button>
-          </div>
-        ))}
-      </div>
       <AddPrize onAdd={addPrize} />
-      <div className="py-4">
-        {"Total: "}
-        {totalAmount}
-        {" USDC"}
-      </div>
+      <Hr />
+      {isEmpty && <div>No prize entries</div>}
+      {!isEmpty && 
+        <div>
+          <div>
+            {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
+              <div key={idx}>
+                {prize.count}
+                {" X "}
+                {prize.amount.toFixed(2)}
+                {" USDC "}
+                <Button small onClick={() => removePrize(idx)}>{"Remove -"}</Button>
+              </div>
+            ))}
+          </div>
+          <div className="py-4">
+            {"Total: "}
+            {totalAmount}
+            {" USDC"}
+          </div>
+        </div>
+      }
     </>
   );
 };

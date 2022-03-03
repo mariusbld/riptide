@@ -12,10 +12,24 @@ import { Theme } from "./Themes";
 //   padding: 0.6rem;
 // `;
 
-const Button: FC<{disabled?: boolean, onClick?: () => void, children: ReactNode}> = ({ onClick, children }) => (
-  <button onClick={onClick} className="dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark dark:hover:bg-btn-bg-hv-dark py-3 px-6 rounded-full">
-    {children}
-  </button>
-)
+interface props {
+  small?: boolean,
+  disabled?: boolean, 
+  onClick?: () => void, 
+  children?: ReactNode
+}
+
+const Button: FC<props> = ({ small, disabled, onClick, children }) => {
+  const className = small ? "py-2 px-4" : "py-3 px-6";
+  return (
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark rounded-full ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default Button;
