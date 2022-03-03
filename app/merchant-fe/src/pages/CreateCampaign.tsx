@@ -106,21 +106,22 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
       {isEmpty && <div>No prize entries</div>}
       {!isEmpty && 
         <div>
-          <div>
-            {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
-              <div key={idx}>
-                {prize.count}
-                {" X "}
-                {prize.amount.toFixed(2)}
-                {" USDC "}
-                <Button small onClick={() => removePrize(idx)}>{"Remove -"}</Button>
-              </div>
-            ))}
-          </div>
-          <div className="py-4">
-            {"Total: "}
-            {totalAmount}
-            {" USDC"}
+          {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
+            <div className="grid grid-cols-9 text-center hover:bg-white/10 group rounded-full" key={idx}>
+              <div className="py-2">{prize.count}</div>
+              <div className="py-2">{" X "}</div>
+              <div className="py-2 col-span-2 text-right">{prize.amount.toFixed(2)}{" USDC "}</div>
+              <div className="py-2">{" = "}</div>
+              <div className="py-2 col-span-2 text-right">{(prize.count * prize.amount).toFixed(2)}{" USDC "}</div>
+              <div className="col-span-2 text-right hidden group-hover:block"><Button small onClick={() => removePrize(idx)}>{"Remove -"}</Button></div>
+            </div>
+          ))}
+          <div className="py-4 grid grid-cols-9 text-center">
+            <div className="col-span-2"></div>
+            <div className="col-span-2 text-right">Total</div>
+            <div>{" = "}</div>
+            <div className="col-span-2 text-right">{totalAmount.toFixed(2)}{" USDC"}</div>
+            <div className="col-span-2"></div>
           </div>
         </div>
       }
