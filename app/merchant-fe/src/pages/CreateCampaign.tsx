@@ -15,7 +15,7 @@ import Modal from "../components/Modal";
 import { PublicKey } from "@solana/web3.js";
 import Heading from "../components/Heading";
 import BackLink from "../components/BackLink";
-import { getTotalAmount } from "../utils/campaign";
+import { getTotalPrizeAmount } from "../utils/campaign";
 import CampaignDetailsSection from "../components/CampaignDetailsSection";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
@@ -101,7 +101,7 @@ const PrizeTable: FC<{
   prizeData: PrizeData;
   remove?: (idx: number) => void;
 }> = ({ prizeData, remove }) => {
-  const totalAmount = getTotalAmount(prizeData);
+  const totalAmount = getTotalPrizeAmount(prizeData);
   const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
   return (
     <div>

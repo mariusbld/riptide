@@ -1,11 +1,11 @@
 import React, { FC } from "react";
-import { getTotalAmount } from "../utils/campaign";
+import { getTotalPrizeAmount } from "../utils/campaign";
 import { CampaignConfig } from "../hooks/useProgram";
 import { toCurrencyString } from "../utils/format";
 import Gift from "../components/svg/Gift";
 
 const CampaignDetailsSection: FC<{ config: CampaignConfig }> = ({ config }) => {
-  const totalAmount = getTotalAmount(config.prizeData);
+  const totalAmount = getTotalPrizeAmount(config.prizeData);
   const percentOfSales = (totalAmount * 100) / config.endSalesAmount!;
   return (
     <div className="flex flex-row items-center justify-center">

@@ -10,7 +10,7 @@ import {
   PlusIcon,
 } from "@heroicons/react/outline";
 import Hr from "../components/Hr";
-import { getTotalAmount } from "../utils/campaign";
+import { getTotalPrizeAmount } from "../utils/campaign";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
   console.log(campaign.id.toString());
@@ -20,7 +20,7 @@ const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
         <div className="underline">{toDisplayString(campaign.id)}</div>
       </BackLink>
       <div className="text-right">
-        {toCurrencyString(getTotalAmount(campaign.config.prizeData))} USDC
+        {toCurrencyString(getTotalPrizeAmount(campaign.config.prizeData))} USDC
       </div>
       <div className="text-right">{new Date().toDateString()}</div>
     </div>

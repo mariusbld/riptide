@@ -1,4 +1,11 @@
-import React, { FC, useEffect, useMemo, useState } from "react";
+import React, {
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   useProgram,
   CampaignState,
@@ -12,24 +19,33 @@ import BackLink from "../components/BackLink";
 import Heading from "../components/Heading";
 import Hr from "../components/Hr";
 import CampaignDetailsSection from "../components/CampaignDetailsSection";
-import { CheckCircleIcon, PlusCircleIcon } from "@heroicons/react/outline";
+import { CheckCircleIcon } from "@heroicons/react/outline";
+import ConfirmModal from "../components/ConfirmModal";
+import { getMissingPrizeFunds } from "../utils/campaign";
 
-const AddFunds: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
-  const totalFunds = campaign.vaultFunds.reduce(
-    (sum, vault) => sum + vault.amount,
-    0
-  );
-  const requiredFunds = campaign.config.prizeData.entries.reduce(
-    (sum, prize) => sum + prize.amount * prize.count,
-    0
-  );
-  const missingFunds = requiredFunds - totalFunds;
+const AddFunds: FC<{
+  campaign: CampaignWithFunds;
+  refresh: () => Promise<void>;
+}> = ({ campaign, refresh }) => {
   const program = useProgram();
+  const missingFunds = getMissingPrizeFunds(campaign);
 
   const handleAddFunds = async () => {
-    await program.addCampaignFunds(campaign.id, missingFunds);
-    alert("funds added!");
+    try {
+      await program.addCampaignFunds(campaign.id, missingFunds);
+      await refresh();
+    } catch (err) {
+      console.error(`Error while adding funds: ${err}`);
+    }
   };
+
+  if (missingFunds === 0) {
+    return (
+      <div className="py-4">
+        <SuccessMessage>Prize funds have been deposited.</SuccessMessage>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -41,31 +57,74 @@ const AddFunds: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
         in order to start the campaign.
       </div>
       <Button small onClick={handleAddFunds}>
-        Deposit Funds $
+        Deposit Funds
       </Button>
     </>
   );
 };
 
-const DraftCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
+const SuccessMessage: FC<{ children?: ReactNode }> = ({ children }) => (
+  <div className="flex flex-row">
+    <span>
+      <CheckCircleIcon className="h-6 w-6" />
+    </span>
+    <span className="px-1">{children}</span>
+  </div>
+);
+
+const DraftCampaign: FC<{
+  campaign: CampaignWithFunds;
+  refresh: () => Promise<void>;
+}> = ({ campaign, refresh }) => {
   const program = useProgram();
-  const handleStart = () => program.startCampaign(campaign.id);
+  const [isStarting, setIsStarting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const canStart = useMemo(() => {
+    return getMissingPrizeFunds(campaign) === 0;
+  }, [campaign]);
+
+  const handleStart = async () => {
+    setIsStarting(true);
+    try {
+      await program.startCampaign(campaign.id);
+      setModalOpen(true);
+    } catch (err) {
+      console.error(`Failed to start the campaign: ${err}`);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleModalConfirm = async () => {
+    setModalOpen(false);
+    await refresh();
+  };
+
   return (
     <div>
+      <ConfirmModal
+        open={modalOpen}
+        setOpen={setModalOpen}
+        onConfirm={handleModalConfirm}
+        title={"Campaign Started!"}
+      >
+        <p className="text-sm dark:text-secondary-dark">
+          Your campaign was successfully started! You can now monitor progress
+          on the campaign details page.
+        </p>
+      </ConfirmModal>
       <CampaignDetailsSection config={campaign.config} />
       <Hr />
-      <div className="flex flex-row">
-        <span>
-          <CheckCircleIcon className="h-6 w-6" />
-        </span>
-        <span className="px-1">
-          Your campaign has been successfully initialized!
-        </span>
-      </div>
-      <AddFunds campaign={campaign} />
+      <SuccessMessage>
+        Your campaign has been successfully initialized!
+      </SuccessMessage>
+      <AddFunds refresh={refresh} campaign={campaign} />
       <Hr />
       <div className="md:flex items-center justify-end">
-        <Button onClick={handleStart}>Start Campaign</Button>
+        <Button disabled={!canStart} onClick={handleStart} loading={isStarting}>
+          Start Campaign
+        </Button>
       </div>
     </div>
   );
@@ -117,12 +176,20 @@ const CampaignDetails: FC = () => {
   }
   const campaignId = useMemo(() => new PublicKey(id), [id]);
 
-  useEffect(() => {
-    (async () => {
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
       const campaign = await program.getCampaign(campaignId);
       setCampaign(campaign);
+    } catch (err) {
+      console.error(`Error while refreshing campaign ${campaignId}: ${err}`);
+    } finally {
       setLoading(false);
-    })();
+    }
+  }, [program, campaignId]);
+
+  useEffect(() => {
+    refresh();
   }, [program, campaignId]);
 
   const isDraft = campaign && campaign.state == CampaignState.Initialized;
@@ -141,7 +208,7 @@ const CampaignDetails: FC = () => {
       </Heading>
       <Hr />
       {loading && <div>Loading</div>}
-      {isDraft && <DraftCampaign campaign={campaign} />}
+      {isDraft && <DraftCampaign refresh={refresh} campaign={campaign} />}
       {isActive && <ActiveCampaign campaign={campaign} />}
       {isStopped && <StoppedCampaign campaign={campaign} />}
       {isRevoked && <ReovkedCampaign campaign={campaign} />}
