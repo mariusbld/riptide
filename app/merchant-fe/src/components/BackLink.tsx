@@ -1,16 +1,16 @@
-import React, { FC } from "react";
+import React, { FC, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-const BackLink: FC<{ pathname: string; text: string }> = ({
+const BackLink: FC<{ pathname: string; children: ReactNode }> = ({
   pathname,
-  text,
+  children,
 }) => {
   return (
     <Link
       className="text-secondary-light dark:text-secondary-dark text-lg"
       to={{ pathname }}
     >
-      {text}
+      {children}
     </Link>
   );
 };

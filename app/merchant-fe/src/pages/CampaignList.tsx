@@ -1,16 +1,28 @@
 import React, { FC, useEffect, useMemo, useState } from "react";
 import { useProgram, Campaign, CampaignState } from "../hooks/useProgram";
-import { Link } from "react-router-dom";
 import Button from "../components/Button";
-import { toDisplayString } from "../utils/format";
+import { toCurrencyString, toDisplayString } from "../utils/format";
+import Heading from "../components/Heading";
+import BackLink from "../components/BackLink";
+import {
+  ChevronRightIcon,
+  PlusCircleIcon,
+  PlusIcon,
+} from "@heroicons/react/outline";
+import Hr from "../components/Hr";
+import { getTotalAmount } from "../utils/campaign";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
   console.log(campaign.id.toString());
   return (
-    <div>
-      <span>{toDisplayString(campaign.id)}</span>
-      <span> </span>
-      <Button>Start</Button>
+    <div className="grid grid-cols-3">
+      <BackLink pathname={`/campaigns/${campaign.id.toString()}`}>
+        <div className="underline">{toDisplayString(campaign.id)}</div>
+      </BackLink>
+      <div className="text-right">
+        {toCurrencyString(getTotalAmount(campaign.config.prizeData))} USDC
+      </div>
+      <div className="text-right">{new Date().toDateString()}</div>
     </div>
   );
 };
@@ -60,21 +72,56 @@ const CampaignList: FC = () => {
 
   return (
     <div>
-      <Link to={"/campaigns/create"}>Create Campaign</Link>
-      <h3>Active Campaigns</h3>
-      {activeCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
-      <h3>Draft Campaigns</h3>
-      {draftCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
-      <h3>Past Campaigns</h3>
-      {inactiveCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
+      <BackLink pathname="/campaigns/create">
+        <div className="flex flex-row items-center">
+          New Campaign <ChevronRightIcon className="ml-1 h-4 w-4" />
+        </div>
+      </BackLink>
+      <div className="pb-12">
+        <Heading>
+          <div className="flex flex-row items-baseline">
+            <span>Active Campaigns</span>
+            <Circle className="bg-green-500" />
+          </div>
+        </Heading>
+        <Hr />
+        {activeCampaigns.length === 0 && <div>No active campaigns.</div>}
+        {activeCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
+      <div className="pb-12">
+        <Heading>
+          <div className="flex flex-row items-baseline">
+            <span>Draft Campaigns</span>
+            <Circle className="bg-yellow-500" />
+          </div>
+        </Heading>
+        <Hr />
+        {draftCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
+      <div className="pb-12">
+        <Heading>
+          <div className="flex flex-row items-baseline">
+            <span>Past Campaigns</span>
+            <Circle className="bg-gray-500" />
+          </div>
+        </Heading>
+        <Hr />
+        {inactiveCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
     </div>
   );
 };
+
+const Circle: FC<{ className: string }> = ({ className }) => (
+  <span
+    className={`ml-4 flex-shrink-0 flex items-center justify-center h-4 w-4 rounded-full ${className}`}
+  ></span>
+);
 
 export default CampaignList;

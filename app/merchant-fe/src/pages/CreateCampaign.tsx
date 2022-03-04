@@ -217,7 +217,7 @@ const CreateCampaign: FC = () => {
     <>
       <Modal open={open} setOpen={setOpen} onConfirm={handleGoToDetails} />
       <div>
-        <BackLink text="< All campaigns" pathname={"/campaigns"} />
+        <BackLink pathname={"/campaigns"}>{"< All campaigns"}</BackLink>
         <Heading>Setup Rewards Campaign</Heading>
         <Hr />
         <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>

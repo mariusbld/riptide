@@ -12,7 +12,7 @@ import BackLink from "../components/BackLink";
 import Heading from "../components/Heading";
 import Hr from "../components/Hr";
 import CampaignDetailsSection from "../components/CampaignDetailsSection";
-import { CheckCircleIcon } from "@heroicons/react/outline";
+import { CheckCircleIcon, PlusCircleIcon } from "@heroicons/react/outline";
 
 const AddFunds: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
   const totalFunds = campaign.vaultFunds.reduce(
@@ -132,7 +132,7 @@ const CampaignDetails: FC = () => {
 
   return (
     <div>
-      <BackLink text="< All campaigns" pathname={"/campaigns"} />
+      <BackLink pathname={"/campaigns"}>{"< All campaigns"}</BackLink>
       <Heading>
         Campaign Details -{" "}
         <span className="dark:text-secondary-dark underline">
