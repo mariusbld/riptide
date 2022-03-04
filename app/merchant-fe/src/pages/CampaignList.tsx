@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import { toDisplayString } from "../utils/format";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
+  console.log(campaign.id.toString());
   return (
     <div>
       <span>{toDisplayString(campaign.id)}</span>

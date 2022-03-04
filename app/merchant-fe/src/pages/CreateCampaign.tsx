@@ -1,4 +1,4 @@
-import React, { FC, useMemo, useState } from "react";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Wizard from "../components/Wizard";
@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import NumberInput from "../components/NumberInput";
 import Hr from "../components/Hr";
 import Gift from "../components/svg/Gift";
+import Modal from "../components/Modal";
+import { PublicKey } from "@solana/web3.js";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
@@ -119,7 +121,7 @@ const PrizeTable: FC<{
           </div>
           <div className="col-span-2 text-right hidden group-hover:block">
             {remove && (
-              <Button small onClick={() => remove(idx)}>
+              <Button destructive small onClick={() => remove(idx)}>
                 {"Remove -"}
               </Button>
             )}
@@ -207,37 +209,51 @@ const Step3Confirm: FC<StepParams> = ({ config }) => {
 };
 
 const CreateCampaign: FC = () => {
+  const [open, setOpen] = useState(false);
+  const [campaignId, setCampaignId] = useState<Nullable<PublicKey>>(null);
   const navigate = useNavigate();
   const [config, setConfig] = useState<CampaignConfig>(defaultConfig);
   const program = useProgram();
   const handleCreate = async () => {
     try {
-      const campaignId = await program.createCampaign(config);
-      alert("Success!");
-      navigate(`/campaigns/${campaignId}`);
+      // const id = await program.createCampaign(config);
+      const id = new PublicKey("9EFYTPgQ32aLjkHLxkDqRw96zX3Qfc5BrwFAkyDqvA33");
+      setCampaignId(id);
+      setOpen(true);
     } catch {
       alert("Encountered an error while trying to create the campaign!");
     }
   };
 
+  const handleGoToDetails = useCallback(() => {
+    if (!campaignId) {
+      console.error("Missing campaign id!");
+      return;
+    }
+    navigate(`/campaigns/${campaignId}`);
+  }, [campaignId]);
+
   return (
-    <div>
-      <Link
-        className="text-secondary-light dark:text-secondary-dark text-lg"
-        to={{ pathname: "/campaigns" }}
-      >
-        {"< All campaigns"}
-      </Link>
-      <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate my-6">
-        Setup Rewards Campaign
-      </h2>
-      <div className="border-t border-zinc-400/50 mb-6"></div>
-      <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>
-        <Step1SalesGoal config={config} setConfig={setConfig} />
-        <Step2Prizes config={config} setConfig={setConfig} />
-        <Step3Confirm config={config} setConfig={setConfig} />
-      </Wizard>
-    </div>
+    <>
+      <Modal open={open} setOpen={setOpen} onConfirm={handleGoToDetails} />
+      <div>
+        <Link
+          className="text-secondary-light dark:text-secondary-dark text-lg"
+          to={{ pathname: "/campaigns" }}
+        >
+          {"< All campaigns"}
+        </Link>
+        <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate my-6">
+          Setup Rewards Campaign
+        </h2>
+        <div className="border-t border-zinc-400/50 mb-6"></div>
+        <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>
+          <Step1SalesGoal config={config} setConfig={setConfig} />
+          <Step2Prizes config={config} setConfig={setConfig} />
+          <Step3Confirm config={config} setConfig={setConfig} />
+        </Wizard>
+      </div>
+    </>
   );
 };
 

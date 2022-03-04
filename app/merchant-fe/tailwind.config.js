@@ -21,6 +21,12 @@ module.exports = {
             },
           },
         },
+        modal: {
+          dark: "#fafafa",
+          bg: {
+            dark: "#2C2A2A",
+          },
+        },
         btn: {
           dark: "#27272a",
           hv: {
@@ -30,6 +36,12 @@ module.exports = {
             dark: "#70EC9D",
             hv: {
               dark: "#70EC9D",
+            },
+          },
+          destr: {
+            dark: "#EC7A70",
+            bg: {
+              dark: "#EC7A70",
             },
           },
         },

@@ -14,18 +14,28 @@ import { Theme } from "./Themes";
 
 interface props {
   small?: boolean;
+  destructive?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   children?: ReactNode;
 }
 
-const Button: FC<props> = ({ small, disabled, onClick, children }) => {
-  const className = small ? "py-2 px-4" : "py-3 px-6";
+const Button: FC<props> = ({
+  small,
+  destructive,
+  disabled,
+  onClick,
+  children,
+}) => {
+  let className = small ? "py-2 px-4" : "py-3 px-6";
+  className += destructive
+    ? " dark:bg-btn-destr-bg-dark"
+    : " dark:bg-btn-bg-dark";
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark rounded-full whitespace-nowrap ${className}`}
+      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark rounded-full whitespace-nowrap ${className}`}
     >
       {children}
     </button>
