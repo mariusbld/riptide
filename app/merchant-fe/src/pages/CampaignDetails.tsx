@@ -1,14 +1,18 @@
 import React, { FC, useEffect, useMemo, useState } from "react";
 import {
   useProgram,
-  Campaign,
   CampaignState,
   CampaignWithFunds,
 } from "../hooks/useProgram";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Button from "../components/Button";
-import { toDisplayString } from "../utils/format";
+import { toCurrencyString, toDisplayString } from "../utils/format";
 import { PublicKey } from "@solana/web3.js";
+import BackLink from "../components/BackLink";
+import Heading from "../components/Heading";
+import Hr from "../components/Hr";
+import CampaignDetailsSection from "../components/CampaignDetailsSection";
+import { CheckCircleIcon } from "@heroicons/react/outline";
 
 const AddFunds: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
   const totalFunds = campaign.vaultFunds.reduce(
@@ -29,10 +33,16 @@ const AddFunds: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
 
   return (
     <>
-      <div>Required Funds: {requiredFunds}</div>
-      <div>Total Funds: {totalFunds}</div>
-      <div>Missing Funds: {missingFunds}</div>
-      <Button onClick={handleAddFunds}>Add Funds</Button>
+      <div className="py-4">
+        You will need to deposit{" "}
+        <span className="underline font-bold dark:text-secondary-dark">
+          {toCurrencyString(missingFunds)} USDC
+        </span>{" "}
+        in order to start the campaign.
+      </div>
+      <Button small onClick={handleAddFunds}>
+        Deposit Funds $
+      </Button>
     </>
   );
 };
@@ -42,9 +52,21 @@ const DraftCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
   const handleStart = () => program.startCampaign(campaign.id);
   return (
     <div>
-      <p>Your campaign has been successfully initialized!</p>
+      <CampaignDetailsSection config={campaign.config} />
+      <Hr />
+      <div className="flex flex-row">
+        <span>
+          <CheckCircleIcon className="h-6 w-6" />
+        </span>
+        <span className="px-1">
+          Your campaign has been successfully initialized!
+        </span>
+      </div>
       <AddFunds campaign={campaign} />
-      <Button onClick={handleStart}>Start Campaign</Button>
+      <Hr />
+      <div className="md:flex items-center justify-end">
+        <Button onClick={handleStart}>Start Campaign</Button>
+      </div>
     </div>
   );
 };
@@ -110,7 +132,14 @@ const CampaignDetails: FC = () => {
 
   return (
     <div>
-      <span>{toDisplayString(campaignId)}</span>
+      <BackLink text="< All campaigns" pathname={"/campaigns"} />
+      <Heading>
+        Campaign Details -{" "}
+        <span className="dark:text-secondary-dark underline">
+          [{toDisplayString(campaignId)}]
+        </span>
+      </Heading>
+      <Hr />
       {loading && <div>Loading</div>}
       {isDraft && <DraftCampaign campaign={campaign} />}
       {isActive && <ActiveCampaign campaign={campaign} />}

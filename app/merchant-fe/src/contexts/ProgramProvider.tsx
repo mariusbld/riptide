@@ -242,7 +242,7 @@ class Client implements ProgramContextState {
           })),
         },
         end: "targetSalesReached",
-        endSalesAmount: a.config.targetSalesAmount,
+        endSalesAmount: a.config.targetSalesAmount.toNumber(),
       },
       stats: {
         prizeStats: [],
