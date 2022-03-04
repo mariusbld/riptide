@@ -27,9 +27,9 @@ export const DarkModeProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     if (darkMode == "dark") {
-      document.documentElement.classList.add('dark')
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
 

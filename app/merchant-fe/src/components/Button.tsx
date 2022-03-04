@@ -13,16 +13,16 @@ import { Theme } from "./Themes";
 // `;
 
 interface props {
-  small?: boolean,
-  disabled?: boolean, 
-  onClick?: () => void, 
-  children?: ReactNode
+  small?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  children?: ReactNode;
 }
 
 const Button: FC<props> = ({ small, disabled, onClick, children }) => {
   const className = small ? "py-2 px-4" : "py-3 px-6";
   return (
-    <button 
+    <button
       onClick={onClick}
       disabled={disabled}
       className={`dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark rounded-full whitespace-nowrap ${className}`}
@@ -30,6 +30,6 @@ const Button: FC<props> = ({ small, disabled, onClick, children }) => {
       {children}
     </button>
   );
-}
+};
 
 export default Button;

@@ -1,8 +1,6 @@
 module.exports = {
   darkMode: "class",
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -19,8 +17,8 @@ module.exports = {
           bg: {
             dark: "#52525b",
             hv: {
-              dark: "#71717a"
-            }
+              dark: "#71717a",
+            },
           },
         },
         btn: {
@@ -32,16 +30,14 @@ module.exports = {
             dark: "#70EC9D",
             hv: {
               dark: "#70EC9D",
-            }
-          }
-        }
-      }
+            },
+          },
+        },
+      },
     },
     fontFamily: {
-      'mono': ['Helvetica Neue', 'Arial', 'sans-serif'],
+      mono: ["Helvetica Neue", "Arial", "sans-serif"],
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
-}
+  plugins: [require("@tailwindcss/forms")],
+};

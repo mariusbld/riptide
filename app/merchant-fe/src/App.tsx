@@ -1,10 +1,8 @@
 import { WalletProvider } from "@solana/wallet-adapter-react";
-import {
-  WalletModalProvider
-} from "@solana/wallet-adapter-react-ui";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter
+  TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import React, { FC, ReactNode, useMemo } from "react";
 import Button from "./components/Button";
@@ -68,7 +66,7 @@ const Navbar: FC = () => {
       </div>
       <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
         <ToggleButton onChange={toggle} />
-        
+
         {/* <a href="#" className="whitespace-nowrap text-base font-medium text-gray-500 hover:text-gray-900">
           Sign in
         </a>
@@ -78,31 +76,33 @@ const Navbar: FC = () => {
         >
           Sign up
         </a> */}
-        <div className="ml-8"><WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" /></div>
+        <div className="ml-8">
+          <WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />
+        </div>
       </div>
     </div>
   );
-}
+};
 
 const Footer: FC = () => {
-  const logo = new URL('./images/solana-pay-logo.png', import.meta.url);
+  const logo = new URL("./images/solana-pay-logo.png", import.meta.url);
   return (
     <div className="absolute bottom-0 flex justify-center items-center py-8 w-full">
       <img width={165} src={logo} />
     </div>
-  )
-}
+  );
+};
 
 const Content: FC = () => {
   return (
     <>
-    <div className="max-w-7xl max-w mx-auto px-4 sm:px-6">
-      <Navbar />
-      <div className="max-w-3xl max-w mx-auto px-4 sm:px-6">
-        <Home />
+      <div className="max-w-7xl max-w mx-auto px-4 sm:px-6">
+        <Navbar />
+        <div className="max-w-3xl max-w mx-auto px-4 sm:px-6">
+          <Home />
+        </div>
       </div>
-    </div>
-    <Footer />
+      <Footer />
     </>
   );
 };
