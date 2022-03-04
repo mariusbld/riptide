@@ -2,9 +2,16 @@ import React, { FC, ReactNode, useState } from "react";
 import Button from "./Button";
 import Hr from "./Hr";
 
-const Wizard: FC<{ onConfirm: () => void; children: ReactNode }> = ({
+interface props {
+  onConfirm: () => void; 
+  children: ReactNode;
+  confirmText?: string;
+}
+
+const Wizard: FC<props> = ({
   onConfirm,
   children,
+  confirmText
 }) => {
   const [step, setStep] = useState<number>(0);
   const childrenArray = React.useMemo(
@@ -33,7 +40,7 @@ const Wizard: FC<{ onConfirm: () => void; children: ReactNode }> = ({
       <div className="md:flex items-center justify-end">
         {!isFirstStep && <div className="pr-2"><Button onClick={handlePrev}>{"< Back"}</Button></div>}
         {isLastStep ? (
-          <Button onClick={onConfirm}>Confirm</Button>
+          <Button onClick={onConfirm}>{confirmText ?? "Confirm"}</Button>
         ) : (
           <Button onClick={handleNext}>{"Next >"}</Button>
         )}

@@ -12,6 +12,7 @@ import { toCurrencyString } from "../utils/format";
 import { Link } from "react-router-dom";
 import NumberInput from "../components/NumberInput";
 import Hr from "../components/Hr";
+import Gift from "../components/svg/Gift";
 
 const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
@@ -78,6 +79,34 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
   );
 };
 
+const PrizeTable: FC<{ prizeData: PrizeData, remove?: (idx: number) => void }> = ({ prizeData, remove }) => {
+  const totalAmount = getTotalAmount(prizeData);
+  const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
+  return (
+    <div>
+      {prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
+        <div className="grid grid-cols-9 text-center hover:bg-white/10 group rounded-full whitespace-nowrap" key={idx}>
+          <div className="py-2">{prize.count}</div>
+          <div className="py-2">{" X "}</div>
+          <div className="py-2 col-span-2 text-right">{toCurrencyString(prize.amount)}{" USDC "}</div>
+          <div className="py-2">{" = "}</div>
+          <div className="py-2 col-span-2 text-right">{toCurrencyString(prize.count * prize.amount)}{" USDC "}</div>
+          <div className="col-span-2 text-right hidden group-hover:block">
+            {remove && <Button small onClick={() => remove(idx)}>{"Remove -"}</Button>}
+          </div>
+        </div>
+      ))}
+      <div className={`py-4 grid grid-cols-9 text-center`}>
+        <div className="col-span-2"></div>
+        <div className="col-span-2 text-right">Total</div>
+        <div>{" = "}</div>
+        <div className="col-span-2 text-right">{toCurrencyString(totalAmount)}{" USDC"}</div>
+        <div className="col-span-2"></div>
+      </div>
+    </div>
+  );
+}
+
 const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
   const setConfigPrizeEntries = (entries: Prize[]) =>
     setConfig({
@@ -96,65 +125,47 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
     entries.splice(idx, 1);
     setConfigPrizeEntries(entries);
   };
-  const totalAmount = getTotalAmount(config.prizeData);
-  const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
   const isEmpty = !config.prizeData.entries.length;
   return (
     <>
       <AddPrize onAdd={addPrize} />
       <Hr />
       {isEmpty && <div>No prize entries</div>}
-      {!isEmpty && 
-        <div>
-          {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
-            <div className="grid grid-cols-9 text-center hover:bg-white/10 group rounded-full" key={idx}>
-              <div className="py-2">{prize.count}</div>
-              <div className="py-2">{" X "}</div>
-              <div className="py-2 col-span-2 text-right">{prize.amount.toFixed(2)}{" USDC "}</div>
-              <div className="py-2">{" = "}</div>
-              <div className="py-2 col-span-2 text-right">{(prize.count * prize.amount).toFixed(2)}{" USDC "}</div>
-              <div className="col-span-2 text-right hidden group-hover:block"><Button small onClick={() => removePrize(idx)}>{"Remove -"}</Button></div>
-            </div>
-          ))}
-          <div className="py-4 grid grid-cols-9 text-center">
-            <div className="col-span-2"></div>
-            <div className="col-span-2 text-right">Total</div>
-            <div>{" = "}</div>
-            <div className="col-span-2 text-right">{totalAmount.toFixed(2)}{" USDC"}</div>
-            <div className="col-span-2"></div>
-          </div>
-        </div>
-      }
+      {!isEmpty && <PrizeTable prizeData={config.prizeData} remove={removePrize} />}
     </>
   );
 };
 
-const Step4Confirm: FC<StepParams> = ({ config }) => {
+const Step3Confirm: FC<StepParams> = ({ config }) => {
   const totalAmount = getTotalAmount(config.prizeData);
   const percentOfSales = (totalAmount * 100) / config.endSalesAmount!;
+  const isEmpty = !config.prizeData.entries.length;
   return (
-    <>
-      <h2>Confirm Campaign</h2>
-      <div>
-        <h3>Target Sales Volume</h3>
-        <div>{toCurrencyString(config.endSalesAmount!)} USDC</div>
-        <h3>Prizes</h3>
-        <div>
-          {config.prizeData.entries.map((prize, idx) => (
-            <div key={idx}>
-              {prize.count}
-              {" X "}${toCurrencyString(prize.amount)}
-              {" = "}
-              {toCurrencyString(prize.count * prize.amount)}
-              {" USDC "}
-            </div>
-          ))}
+    <div>
+      <div className="flex flex-row items-center justify-center">
+        <div className="text-right flex flex-col items-center">
+          <div className="flex flex-row items-start py-2">
+            <div className="w-48 font-bold">Target Sales Volume:</div>
+            <div className="w-40">{toCurrencyString(config.endSalesAmount!)} USDC</div>
+          </div>
+          <div className="flex flex-row items-start py-2">
+            <div className="w-48 font-bold">Rewards Total:</div>
+            <div className="w-40">{toCurrencyString(totalAmount)} USDC</div>
+          </div>
+          <div className="flex flex-row items-start py-2">
+            <div className="w-48 font-bold">Percent of Sales Volume:</div>
+            <div className="w-40">{percentOfSales.toFixed(2)} %</div>
+          </div>
         </div>
-        <h3>Campaign Budget</h3>
-        <div>{`Total: ${toCurrencyString(totalAmount)} USDC`}</div>
-        <div>{`Percent of Sales Volume: ${percentOfSales.toFixed(2)} %`}</div>
+        <div className="mx-8 w-36 h-36">
+          <Gift />
+        </div>
       </div>
-    </>
+      <Hr />
+      <div className="font-bold pb-4">Prize List</div>
+      {isEmpty && <div>No prize entries</div>}
+      {!isEmpty && <PrizeTable prizeData={config.prizeData} />}
+    </div>
   );
 };
 
@@ -179,10 +190,10 @@ const CreateCampaign: FC = () => {
       </Link>
       <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate my-6">Setup Rewards Campaign</h2>
       <div className="border-t border-zinc-400/50 mb-6"></div>
-      <Wizard onConfirm={handleCreate}>
+      <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>
         <Step1SalesGoal config={config} setConfig={setConfig} />
         <Step2Prizes config={config} setConfig={setConfig} />
-        <Step4Confirm config={config} setConfig={setConfig} />
+        <Step3Confirm config={config} setConfig={setConfig} />
       </Wizard>
     </div>
   );

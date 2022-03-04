@@ -25,7 +25,7 @@ const Button: FC<props> = ({ small, disabled, onClick, children }) => {
     <button 
       onClick={onClick}
       disabled={disabled}
-      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark rounded-full ${className}`}
+      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark dark:bg-btn-bg-dark rounded-full whitespace-nowrap ${className}`}
     >
       {children}
     </button>
