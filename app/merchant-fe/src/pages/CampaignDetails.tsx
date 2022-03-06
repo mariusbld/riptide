@@ -21,7 +21,7 @@ import Hr from "../components/Hr";
 import CampaignDetailsSection from "../components/CampaignDetailsSection";
 import { CheckCircleIcon } from "@heroicons/react/outline";
 import ConfirmModal from "../components/ConfirmModal";
-import { getMissingPrizeFunds } from "../utils/campaign";
+import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
 import CampaignStatsSection from "../components/CampaignStatsSection";
 
 const AddFunds: FC<{
@@ -59,6 +59,50 @@ const AddFunds: FC<{
       </div>
       <Button small onClick={handleAddFunds}>
         Deposit Funds
+      </Button>
+    </>
+  );
+};
+
+const WithdrawFunds: FC<{
+  campaign: CampaignWithFunds;
+  refresh: () => Promise<void>;
+}> = ({ campaign, refresh }) => {
+  const program = useProgram();
+  const vaultFunds = getVaultFunds(campaign);
+  const vault = useMemo(() => campaign.vaults.at(0), [campaign]);
+
+  const handleWithdrawFunds = async () => {
+    if (!vault) {
+      return;
+    }
+    try {
+      await program.withdrawCampaignFunds(campaign.id, vault);
+      await refresh();
+    } catch (err) {
+      console.error(`Error while adding funds: ${err}`);
+    }
+  };
+
+  if (vaultFunds === 0) {
+    return (
+      <div className="py-4">
+        <SuccessMessage>No funds to withdraw.</SuccessMessage>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="py-4">
+        You can withdraw{" "}
+        <span className="underline font-bold dark:text-secondary-dark">
+          {toCurrencyString(vaultFunds)} USDC
+        </span>{" "}
+        worth of funds not awarded.
+      </div>
+      <Button small onClick={handleWithdrawFunds}>
+        Withdraw Funds
       </Button>
     </>
   );
@@ -268,16 +312,17 @@ const ActiveCampaign: FC<{
   );
 };
 
-const PastCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
-  const program = useProgram();
-  const vault = useMemo(() => campaign.vaults.at(0), [campaign]);
-  const handleWithdraw = () => {
-    vault && program.withdrawCampaignFunds(campaign.id, vault);
-  };
+const PastCampaign: FC<{
+  campaign: CampaignWithFunds;
+  refresh: () => Promise<void>;
+}> = ({ campaign, refresh }) => {
   return (
     <div>
-      <div>Revoked</div>
-      <Button onClick={handleWithdraw}>Withdraw Funds</Button>
+      <CampaignDetailsSection config={campaign.config} />
+      <Hr />
+      <CampaignStatsSection campaign={campaign} />
+      <Hr />
+      <WithdrawFunds campaign={campaign} refresh={refresh} />
     </div>
   );
 };
