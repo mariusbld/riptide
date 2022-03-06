@@ -71,7 +71,7 @@ const ConfirmModal: FC<props> = ({
                 </div>
                 <div className="my-4">
                   <Button onClick={onConfirm} small>
-                    OK
+                    Okay
                   </Button>
                 </div>
               </div>

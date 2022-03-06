@@ -130,29 +130,142 @@ const DraftCampaign: FC<{
   );
 };
 
-const ActiveCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
+const ActiveCampaign: FC<{
+  campaign: CampaignWithFunds;
+  refresh: () => Promise<void>;
+}> = ({ campaign, refresh }) => {
+  type actionName = "stop" | "start" | "revoke";
+  interface actionType {
+    name: actionName;
+    modalTitle: string;
+    modalContent: string;
+    handle: () => Promise<void>;
+  }
+
   const program = useProgram();
-  const handleStop = () => program.stopCampaign(campaign.id);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currAction, setCurrAction] = useState<actionName>();
+
+  const isStarting = isLoading && currAction === "start";
+  const isStopping = isLoading && currAction === "stop";
+  const isRevoking = isLoading && currAction === "revoke";
+
+  const campaignIsStarted = campaign.state == CampaignState.Started;
+  const campaignIsStopped = campaign.state == CampaignState.Stopped;
+
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalContent, setModalContent] = useState("");
+
+  const stopAction: actionType = useMemo(
+    () => ({
+      name: "stop",
+      modalTitle: "Campaign Stopped!",
+      modalContent:
+        "Your campaign was successfully stopped! Any new purchases won't qualify for any of the campaign prizes.",
+      handle: () => program.stopCampaign(campaign.id),
+    }),
+    [campaign.id]
+  );
+
+  const startAction: actionType = useMemo(
+    () => ({
+      name: "start",
+      modalTitle: "Campaign Started!",
+      modalContent:
+        "Your campaign was successfully started! New purchases are eligible for campaign prizes.",
+      handle: () => program.startCampaign(campaign.id),
+    }),
+    [campaign.id]
+  );
+
+  const revokeAction: actionType = useMemo(
+    () => ({
+      name: "revoke",
+      modalTitle: "Campaign Revoked!",
+      modalContent:
+        "Your campaign was successfully revoked! You can now withdraw any remaining funds.",
+      handle: () => program.revokeCampaign(campaign.id),
+    }),
+    [campaign.id]
+  );
+
+  const handleAction = async (action: actionType) => {
+    setIsLoading(true);
+    try {
+      await action.handle();
+      setModalOpen(true);
+    } catch (err) {
+      console.error(
+        `Error while executing ${action.name} for campaign ${campaign.id}: ${err}`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStop = useCallback(async () => {
+    setCurrAction(stopAction.name);
+    setModalTitle(stopAction.modalTitle);
+    setModalContent(stopAction.modalContent);
+    await handleAction(stopAction);
+  }, [stopAction]);
+
+  const handleStart = useCallback(async () => {
+    setCurrAction(startAction.name);
+    setModalTitle(startAction.modalTitle);
+    setModalContent(startAction.modalContent);
+    await handleAction(startAction);
+  }, [startAction]);
+
+  const handleRevoke = useCallback(async () => {
+    setCurrAction(revokeAction.name);
+    setModalTitle(revokeAction.modalTitle);
+    setModalContent(revokeAction.modalContent);
+    await handleAction(revokeAction);
+  }, [revokeAction]);
+
+  const handleModalConfirm = async () => {
+    setModalOpen(false);
+    await refresh();
+  };
+
   return (
     <div>
-      <div>Running</div>
-      <Button onClick={handleStop}>Stop Campaign</Button>
+      <ConfirmModal
+        open={modalOpen}
+        setOpen={setModalOpen}
+        onConfirm={handleModalConfirm}
+        title={modalTitle}
+      >
+        <p className="text-sm dark:text-secondary-dark">{modalContent}</p>
+      </ConfirmModal>
+      <CampaignDetailsSection config={campaign.config} />
+      <Hr />
+      <div className="md:flex items-center justify-end">
+        {campaignIsStopped && (
+          <>
+            <Button onClick={handleStart} loading={isStarting}>
+              Start Campaign
+            </Button>
+            <div className="pl-2">
+              <Button destructive onClick={handleRevoke} loading={isRevoking}>
+                Revoke Campaign
+              </Button>
+            </div>
+          </>
+        )}
+        {campaignIsStarted && (
+          <Button destructive onClick={handleStop} loading={isStopping}>
+            Stop Campaign
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
 
-const StoppedCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
-  const program = useProgram();
-  const handleRevoke = () => program.revokeCampaign(campaign.id);
-  return (
-    <div>
-      <div>Stopped</div>
-      <Button onClick={handleRevoke}>Revoke Campaign</Button>
-    </div>
-  );
-};
-
-const ReovkedCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
+const PastCampaign: FC<{ campaign: CampaignWithFunds }> = ({ campaign }) => {
   const program = useProgram();
   const vault = useMemo(() => campaign.vaults.at(0), [campaign]);
   const handleWithdraw = () => {
@@ -193,7 +306,7 @@ const CampaignDetails: FC = () => {
   }, [program, campaignId]);
 
   const isDraft = campaign && campaign.state == CampaignState.Initialized;
-  const isActive = campaign && campaign.state == CampaignState.Started;
+  const isStarted = campaign && campaign.state == CampaignState.Started;
   const isStopped = campaign && campaign.state == CampaignState.Stopped;
   const isRevoked = campaign && campaign.state == CampaignState.Revoked;
 
@@ -209,9 +322,10 @@ const CampaignDetails: FC = () => {
       <Hr />
       {loading && <div>Loading</div>}
       {isDraft && <DraftCampaign refresh={refresh} campaign={campaign} />}
-      {isActive && <ActiveCampaign campaign={campaign} />}
-      {isStopped && <StoppedCampaign campaign={campaign} />}
-      {isRevoked && <ReovkedCampaign campaign={campaign} />}
+      {(isStarted || isStopped) && (
+        <ActiveCampaign refresh={refresh} campaign={campaign} />
+      )}
+      {isRevoked && <PastCampaign campaign={campaign} />}
     </div>
   );
 };
