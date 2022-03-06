@@ -167,7 +167,7 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
     <>
       <AddPrize onAdd={addPrize} />
       <Hr />
-      {isEmpty && <div>No prize entries</div>}
+      {isEmpty && <div>No prize entries.</div>}
       {!isEmpty && (
         <PrizeTable prizeData={config.prizeData} remove={removePrize} />
       )}
@@ -182,22 +182,22 @@ const Step3Confirm: FC<StepParams> = ({ config }) => {
       <CampaignDetailsSection config={config} />
       <Hr />
       <div className="font-bold pb-4">Prize List</div>
-      {isEmpty && <div>No prize entries</div>}
+      {isEmpty && <div>No prize entries.</div>}
       {!isEmpty && <PrizeTable prizeData={config.prizeData} />}
     </div>
   );
 };
 
 const CreateCampaign: FC = () => {
+  const program = useProgram();
   const [open, setOpen] = useState(false);
   const [campaignId, setCampaignId] = useState<Nullable<PublicKey>>(null);
   const navigate = useNavigate();
   const [config, setConfig] = useState<CampaignConfig>(defaultConfig);
-  const program = useProgram();
+
   const handleCreate = async () => {
     try {
-      // const id = await program.createCampaign(config);
-      const id = new PublicKey("9EFYTPgQ32aLjkHLxkDqRw96zX3Qfc5BrwFAkyDqvA33");
+      const id = await program.createCampaign(config);
       setCampaignId(id);
       setOpen(true);
     } catch {

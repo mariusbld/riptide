@@ -98,6 +98,7 @@ const CampaignList: FC = () => {
           </div>
         </Heading>
         <Hr />
+        {draftCampaigns.length === 0 && <div>No draft campaigns.</div>}
         {draftCampaigns.map((c) => (
           <Campaign key={c.id.toString()} campaign={c} />
         ))}
@@ -110,6 +111,7 @@ const CampaignList: FC = () => {
           </div>
         </Heading>
         <Hr />
+        {inactiveCampaigns.length === 0 && <div>No past campaigns.</div>}
         {inactiveCampaigns.map((c) => (
           <Campaign key={c.id.toString()} campaign={c} />
         ))}

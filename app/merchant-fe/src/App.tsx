@@ -17,6 +17,7 @@ import { ThemeProvider } from "./contexts/ThemeProvider";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Home from "./pages/Home";
+import { Link } from "react-router-dom";
 
 // require('./app.scss');
 
@@ -59,10 +60,10 @@ const Navbar: FC = () => {
   return (
     <div className="flex justify-between items-baseline py-8 md:justify-start md:space-x-10">
       <div className="flex justify-start lg:w-0 lg:flex-1">
-        <a href="#">
+        <Link to="/">
           <span className="sr-only">Phoria</span>
           <PhoriaLogo />
-        </a>
+        </Link>
       </div>
       <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
         <ToggleButton onChange={toggle} />
@@ -85,7 +86,7 @@ const Navbar: FC = () => {
 };
 
 const Footer: FC = () => {
-  const logo = new URL("./images/solana-pay-logo.png", import.meta.url);
+  const logo = new URL("./images/solana-pay-logo.png", import.meta.url).toString();
   return (
     <div className="absolute bottom-0 flex justify-center items-center py-8 w-full">
       <img width={165} src={logo} />
