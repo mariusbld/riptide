@@ -2,18 +2,26 @@ import * as anchor from "@project-serum/anchor";
 import { Idl, Program } from "@project-serum/anchor";
 import {
   getAccount,
-  getAssociatedTokenAddress, TOKEN_PROGRAM_ID
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   Keypair,
   PublicKey,
   SystemProgram,
-  SYSVAR_RENT_PUBKEY
+  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import React, { FC, ReactNode, useMemo } from "react";
 import {
-  Campaign, CampaignConfig, CampaignId, CampaignState,
-  CampaignWithFunds, ProgramContext, ProgramContextState, Vault, VaultWithFunds
+  Campaign,
+  CampaignConfig,
+  CampaignId,
+  CampaignState,
+  CampaignWithFunds,
+  ProgramContext,
+  ProgramContextState,
+  Vault,
+  VaultWithFunds,
 } from "../hooks/useProgram";
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
@@ -234,10 +242,12 @@ class Client implements ProgramContextState {
           })),
         },
         end: "targetSalesReached",
-        endSalesAmount: a.config.targetSalesAmount,
+        endSalesAmount: a.config.targetSalesAmount.toNumber(),
       },
       stats: {
-        prizeStats: [],
+        prizeStats: a.stats.prizeStats.map((e: any) => ({
+          awardedCount: e.awardedCount.toNumber(),
+        })),
         runningSalesAmount: 0,
         runningSalesCount: 0,
         createdTime: new Date(),

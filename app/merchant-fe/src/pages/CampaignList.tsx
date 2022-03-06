@@ -1,15 +1,23 @@
+import { ChevronRightIcon } from "@heroicons/react/outline";
 import React, { FC, useEffect, useMemo, useState } from "react";
-import { useProgram, Campaign, CampaignState } from "../hooks/useProgram";
-import { Link } from "react-router-dom";
-import Button from "../components/Button";
-import { toDisplayString } from "../utils/format";
+import Hr from "../components/Hr";
+import NavLink from "../components/NavLink";
+import SectionHeading from "../components/SectionHeading";
+import { Campaign, CampaignState, useProgram } from "../hooks/useProgram";
+import { getTotalPrizeAmount } from "../utils/campaign";
+import { toCurrencyString, toDisplayString } from "../utils/format";
+import CircleDecoration from "../components/CircleDecoration";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
   return (
-    <div>
-      <span>{toDisplayString(campaign.id)}</span>
-      <span> </span>
-      <Button>Start</Button>
+    <div className="grid grid-cols-3">
+      <NavLink pathname={`/campaigns/${campaign.id.toString()}`}>
+        <div className="underline">{toDisplayString(campaign.id)}</div>
+      </NavLink>
+      <div className="text-right">
+        {toCurrencyString(getTotalPrizeAmount(campaign.config.prizeData))} USDC
+      </div>
+      <div className="text-right">{new Date().toDateString()}</div>
     </div>
   );
 };
@@ -59,19 +67,50 @@ const CampaignList: FC = () => {
 
   return (
     <div>
-      <Link to={"/campaigns/create"}>Create Campaign</Link>
-      <h3>Active Campaigns</h3>
-      {activeCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
-      <h3>Draft Campaigns</h3>
-      {draftCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
-      <h3>Past Campaigns</h3>
-      {inactiveCampaigns.map((c) => (
-        <Campaign key={c.id.toString()} campaign={c} />
-      ))}
+      <NavLink pathname="/campaigns/create">
+        <div className="flex flex-row items-center">
+          New Campaign <ChevronRightIcon className="ml-1 h-4 w-4" />
+        </div>
+      </NavLink>
+      <div className="pb-12">
+        <SectionHeading>
+          <div className="flex flex-row items-baseline">
+            <span>Active Campaigns</span>
+            <CircleDecoration className="bg-green-500" />
+          </div>
+        </SectionHeading>
+        <Hr />
+        {activeCampaigns.length === 0 && <div>No active campaigns.</div>}
+        {activeCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
+      <div className="pb-12">
+        <SectionHeading>
+          <div className="flex flex-row items-baseline">
+            <span>Draft Campaigns</span>
+            <CircleDecoration className="bg-yellow-500" />
+          </div>
+        </SectionHeading>
+        <Hr />
+        {draftCampaigns.length === 0 && <div>No draft campaigns.</div>}
+        {draftCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
+      <div className="pb-12">
+        <SectionHeading>
+          <div className="flex flex-row items-baseline">
+            <span>Past Campaigns</span>
+            <CircleDecoration className="bg-gray-500" />
+          </div>
+        </SectionHeading>
+        <Hr />
+        {inactiveCampaigns.length === 0 && <div>No past campaigns.</div>}
+        {inactiveCampaigns.map((c) => (
+          <Campaign key={c.id.toString()} campaign={c} />
+        ))}
+      </div>
     </div>
   );
 };

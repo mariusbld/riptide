@@ -1,16 +1,24 @@
-import React, { FC, useMemo, useState } from "react";
+import { PublicKey } from "@solana/web3.js";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
+import CampaignDetailsSection from "../components/CampaignDetailsSection";
+import ConfirmModal, { ModalIcon } from "../components/ConfirmModal";
+import Hr from "../components/Hr";
+import InfoMessage, { MessageIcon } from "../components/InfoMessage";
+import NavLink from "../components/NavLink";
+import NumberInput from "../components/NumberInput";
+import SectionHeading from "../components/SectionHeading";
 import Wizard from "../components/Wizard";
 import {
   CampaignConfig,
   Prize,
   PrizeData,
-  useProgram
+  useProgram,
 } from "../hooks/useProgram";
+import { getTotalPrizeAmount } from "../utils/campaign";
 import { toCurrencyString } from "../utils/format";
 
-const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
 const DEAFULT_PRIZE_AMOUNT = 0;
 
@@ -20,7 +28,7 @@ const defaultConfig: CampaignConfig = {
   },
   end: "targetSalesReached",
   endDate: undefined,
-  endSalesAmount: DEFAULT_TARGET_SALES_AMOUNT_USDC,
+  endSalesAmount: undefined,
 };
 
 interface StepParams {
@@ -34,16 +42,22 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
 
   return (
     <>
-      <h2>What is your sales volume goal for this campaign?</h2>
-      <p>When this sales volume target is reached, the campaign ends.</p>
-      <label>
-        <input
-          type={"number"}
-          onChange={(e) => setEndSalesAmount(parseInt(e.target.value))}
-          value={config.endSalesAmount}
-        />{" "}
-        USDC
-      </label>
+      <p className="pb-2">What is your sales volume goal for this campaign?</p>
+      <div className="flex flex-row items-center">
+        <div className="w-40">
+          <NumberInput
+            suffix="USDC"
+            value={config.endSalesAmount}
+            onChange={setEndSalesAmount}
+            placeholder={"e.g. 10000"}
+          />
+        </div>
+        <div className="px-2 dark:text-secondary-dark">
+          <InfoMessage icon={MessageIcon.Info}>
+            Campaign ends when this sales amount is reached.
+          </InfoMessage>
+        </div>
+      </div>
     </>
   );
 };
@@ -65,26 +79,74 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
   };
 
   return (
-    <div>
-      <label>
-        <input
-          type="number"
-          onChange={(e) => setCount(parseInt(e.target.value))}
+    <div className="flex flex-row items-end">
+      <div className="w-40">
+        <NumberInput
+          integer
+          label="Number of prizes"
           value={count}
+          onChange={setCount}
         />
-      </label>
-      {" X "}
-      <label>
-        <input
-          type="number"
-          onChange={(e) => setAmount(parseInt(e.target.value))}
+      </div>
+      <div className="px-4 mb-1">{" X "}</div>
+      <div className="w-40 pr-4">
+        <NumberInput
+          label="Prize amount"
+          suffix="USDC"
           value={amount}
+          onChange={setAmount}
         />
-        {" USDC "}
-      </label>
-      <Button disabled={!valid} onClick={handleAdd}>
-        {"Add >>"}
+      </div>
+      <Button small disabled={!valid} onClick={handleAdd}>
+        {"Add +"}
       </Button>
+    </div>
+  );
+};
+
+const PrizeTable: FC<{
+  prizeData: PrizeData;
+  remove?: (idx: number) => void;
+}> = ({ prizeData, remove }) => {
+  const totalAmount = getTotalPrizeAmount(prizeData);
+  const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
+  return (
+    <div>
+      {prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
+        <div
+          className="grid grid-cols-9 text-center hover:bg-white/10 group rounded-full whitespace-nowrap"
+          key={idx}
+        >
+          <div className="py-2">{prize.count}</div>
+          <div className="py-2">{" X "}</div>
+          <div className="py-2 col-span-2 text-right">
+            {toCurrencyString(prize.amount)}
+            {" USDC "}
+          </div>
+          <div className="py-2">{" = "}</div>
+          <div className="py-2 col-span-2 text-right">
+            {toCurrencyString(prize.count * prize.amount)}
+            {" USDC "}
+          </div>
+          <div className="col-span-2 text-right hidden group-hover:block">
+            {remove && (
+              <Button destructive small onClick={() => remove(idx)}>
+                {"Remove -"}
+              </Button>
+            )}
+          </div>
+        </div>
+      ))}
+      <div className={`py-4 grid grid-cols-9 text-center`}>
+        <div className="col-span-2"></div>
+        <div className="col-span-2 text-right">Total</div>
+        <div>{" = "}</div>
+        <div className="col-span-2 text-right">
+          {toCurrencyString(totalAmount)}
+          {" USDC"}
+        </div>
+        <div className="col-span-2"></div>
+      </div>
     </div>
   );
 };
@@ -107,88 +169,82 @@ const Step2Prizes: FC<StepParams> = ({ config, setConfig }) => {
     entries.splice(idx, 1);
     setConfigPrizeEntries(entries);
   };
-  const totalAmount = getTotalAmount(config.prizeData);
-  const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
+  const isEmpty = !config.prizeData.entries.length;
   return (
     <>
-      <h2>Prizes</h2>
-      <div>
-        {config.prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
-          <div key={idx}>
-            {prize.count}
-            {" X "}
-            {prize.amount.toFixed(2)}
-            {" USDC "}
-            <Button onClick={() => removePrize(idx)}>Remove</Button>
-          </div>
-        ))}
-      </div>
       <AddPrize onAdd={addPrize} />
-      <div>
-        {"Total: "}
-        {totalAmount}
-        {" USDC"}
-      </div>
+      <Hr />
+      {isEmpty && <div>No prize entries.</div>}
+      {!isEmpty && (
+        <PrizeTable prizeData={config.prizeData} remove={removePrize} />
+      )}
     </>
   );
 };
 
-const Step4Confirm: FC<StepParams> = ({ config }) => {
-  const totalAmount = getTotalAmount(config.prizeData);
-  const percentOfSales = (totalAmount * 100) / config.endSalesAmount!;
+const Step3Confirm: FC<StepParams> = ({ config }) => {
+  const isEmpty = !config.prizeData.entries.length;
   return (
-    <>
-      <h2>Confirm Campaign</h2>
-      <div>
-        <h3>Target Sales Volume</h3>
-        <div>{toCurrencyString(config.endSalesAmount!)} USDC</div>
-        <h3>Prizes</h3>
-        <div>
-          {config.prizeData.entries.map((prize, idx) => (
-            <div key={idx}>
-              {prize.count}
-              {" X "}${toCurrencyString(prize.amount)}
-              {" = "}
-              {toCurrencyString(prize.count * prize.amount)}
-              {" USDC "}
-            </div>
-          ))}
-        </div>
-        <h3>Campaign Budget</h3>
-        <div>{`Total: ${toCurrencyString(totalAmount)} USDC`}</div>
-        <div>{`Percent of Sales Volume: ${percentOfSales.toFixed(2)} %`}</div>
-      </div>
-    </>
+    <div>
+      <CampaignDetailsSection config={config} />
+      <Hr />
+      <div className="font-bold pb-4">Prize List</div>
+      {isEmpty && <div>No prize entries.</div>}
+      {!isEmpty && <PrizeTable prizeData={config.prizeData} />}
+    </div>
   );
 };
 
 const CreateCampaign: FC = () => {
+  const program = useProgram();
+  const [open, setOpen] = useState(false);
+  const [campaignId, setCampaignId] = useState<Nullable<PublicKey>>(null);
   const navigate = useNavigate();
   const [config, setConfig] = useState<CampaignConfig>(defaultConfig);
-  const program = useProgram();
+
   const handleCreate = async () => {
     try {
-      const campaignId = await program.createCampaign(config);
-      alert("Success!");
-      navigate(`/campaigns/${campaignId}`);
+      const id = await program.createCampaign(config);
+      setCampaignId(id);
+      setOpen(true);
     } catch {
       alert("Encountered an error while trying to create the campaign!");
     }
   };
 
-  return (
-    <Wizard onConfirm={handleCreate}>
-      <Step1SalesGoal config={config} setConfig={setConfig} />
-      <Step2Prizes config={config} setConfig={setConfig} />
-      <Step4Confirm config={config} setConfig={setConfig} />
-    </Wizard>
-  );
-};
+  const handleGoToDetails = useCallback(() => {
+    if (!campaignId) {
+      console.error("Missing campaign id!");
+      return;
+    }
+    navigate(`/campaigns/${campaignId}`);
+  }, [campaignId]);
 
-const getTotalAmount = (prizeData: PrizeData): number => {
-  return prizeData.entries.reduce(
-    (prev, curr) => prev + curr.amount * curr.count,
-    0
+  return (
+    <>
+      <ConfirmModal
+        open={open}
+        setOpen={setOpen}
+        onConfirm={handleGoToDetails}
+        icon={ModalIcon.Check}
+        confirmText="Campaign Details"
+      >
+        <p className="text-sm text-gray-500">
+          Your campaign was successfully created! You can now navigate to the
+          campaign details page in order to add funds and start it.
+        </p>
+      </ConfirmModal>
+      <div>
+        <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
+        <SectionHeading>Setup Rewards Campaign</SectionHeading>
+        <Hr />
+        <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>
+          <Step1SalesGoal config={config} setConfig={setConfig} />
+          <Step2Prizes config={config} setConfig={setConfig} />
+          <Step3Confirm config={config} setConfig={setConfig} />
+        </Wizard>
+      </div>
+    </>
   );
 };
 

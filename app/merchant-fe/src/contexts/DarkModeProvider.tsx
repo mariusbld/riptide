@@ -1,11 +1,19 @@
-import React, { FC, ReactNode, useState, useEffect, useMemo } from "react";
-import { DarkMode, DarkModeContext } from "../hooks/useDarkMode";
+import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { darkTheme, lightTheme } from "../components/Themes";
+import { DarkMode, DarkModeContext } from "../hooks/useDarkMode";
 
 const darkModeLocalKey = "darkMode";
 
 export const DarkModeProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [darkMode, setDarkMode] = useState<DarkMode>("light");
+
+  useEffect(() => {
+    if (darkMode == "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   const setMode = (mode: DarkMode) => {
     window.localStorage.setItem(darkModeLocalKey, mode);

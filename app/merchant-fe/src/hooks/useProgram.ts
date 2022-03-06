@@ -20,8 +20,12 @@ export interface CampaignConfig {
   endSalesAmount?: number;
 }
 
+export interface PrizeStats {
+  awardedCount: number;
+}
+
 export interface CampaignStats {
-  prizeStats: number[];
+  prizeStats: PrizeStats[];
   runningSalesAmount: number;
   runningSalesCount: number;
   createdTime: Date;
