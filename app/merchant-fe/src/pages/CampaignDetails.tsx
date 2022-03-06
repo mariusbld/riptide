@@ -373,7 +373,7 @@ const CampaignDetails: FC = () => {
       {(isStarted || isStopped) && (
         <ActiveCampaign refresh={refresh} campaign={campaign} />
       )}
-      {isRevoked && <PastCampaign campaign={campaign} />}
+      {isRevoked && <PastCampaign refresh={refresh} campaign={campaign} />}
     </div>
   );
 };
