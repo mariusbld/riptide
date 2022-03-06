@@ -22,6 +22,7 @@ import CampaignDetailsSection from "../components/CampaignDetailsSection";
 import { CheckCircleIcon } from "@heroicons/react/outline";
 import ConfirmModal from "../components/ConfirmModal";
 import { getMissingPrizeFunds } from "../utils/campaign";
+import CampaignStatsSection from "../components/CampaignStatsSection";
 
 const AddFunds: FC<{
   campaign: CampaignWithFunds;
@@ -241,6 +242,8 @@ const ActiveCampaign: FC<{
         <p className="text-sm dark:text-secondary-dark">{modalContent}</p>
       </ConfirmModal>
       <CampaignDetailsSection config={campaign.config} />
+      <Hr />
+      <CampaignStatsSection campaign={campaign} />
       <Hr />
       <div className="md:flex items-center justify-end">
         {campaignIsStopped && (

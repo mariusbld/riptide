@@ -245,7 +245,9 @@ class Client implements ProgramContextState {
         endSalesAmount: a.config.targetSalesAmount.toNumber(),
       },
       stats: {
-        prizeStats: [],
+        prizeStats: a.stats.prizeStats.map((e: any) => ({
+          awardedCount: e.awardedCount.toNumber(),
+        })),
         runningSalesAmount: 0,
         runningSalesCount: 0,
         createdTime: new Date(),
