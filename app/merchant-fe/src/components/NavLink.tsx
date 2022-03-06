@@ -1,7 +1,7 @@
 import React, { FC, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-const BackLink: FC<{ pathname: string; children: ReactNode }> = ({
+const NavLink: FC<{ pathname: string; children: ReactNode }> = ({
   pathname,
   children,
 }) => {
@@ -15,4 +15,4 @@ const BackLink: FC<{ pathname: string; children: ReactNode }> = ({
   );
 };
 
-export default BackLink;
+export default NavLink;

@@ -7,6 +7,7 @@ interface props {
   value?: number;
   onChange?: (val: number) => void;
   integer?: boolean;
+  placeholder?: string;
 }
 
 const NumberInput: FC<props> = ({
@@ -15,6 +16,7 @@ const NumberInput: FC<props> = ({
   value,
   onChange,
   integer,
+  placeholder,
 }) => {
   const { current: inputId } = useRef(uniqueId());
   const handleChange = (strVal: string) => {
@@ -26,6 +28,7 @@ const NumberInput: FC<props> = ({
     }
     onChange && onChange(val);
   };
+  const placeholderText = placeholder ?? Number(0).toFixed(integer ? 0 : 2);
   return (
     <div>
       {label && (
@@ -48,7 +51,7 @@ const NumberInput: FC<props> = ({
           onChange={(e) => handleChange(e.target.value)}
           id={inputId}
           className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-full dark:bg-input-bg-dark dark:hover:bg-input-bg-hv-dark dark:text-primary-dark dark:placeholder:text-primary-dark"
-          placeholder={integer ? "0" : "0.00"}
+          placeholder={placeholderText}
         />
         {suffix && (
           <div className="absolute inset-y-0 right-0 flex items-center pointer-events-none">

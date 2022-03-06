@@ -1,6 +1,14 @@
+import { PublicKey } from "@solana/web3.js";
 import React, { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
+import CampaignDetailsSection from "../components/CampaignDetailsSection";
+import ConfirmModal, { ModalIcon } from "../components/ConfirmModal";
+import Hr from "../components/Hr";
+import InfoMessage, { MessageIcon } from "../components/InfoMessage";
+import NavLink from "../components/NavLink";
+import NumberInput from "../components/NumberInput";
+import SectionHeading from "../components/SectionHeading";
 import Wizard from "../components/Wizard";
 import {
   CampaignConfig,
@@ -8,17 +16,9 @@ import {
   PrizeData,
   useProgram,
 } from "../hooks/useProgram";
-import { toCurrencyString } from "../utils/format";
-import NumberInput from "../components/NumberInput";
-import Hr from "../components/Hr";
-import Modal from "../components/Modal";
-import { PublicKey } from "@solana/web3.js";
-import Heading from "../components/Heading";
-import BackLink from "../components/BackLink";
 import { getTotalPrizeAmount } from "../utils/campaign";
-import CampaignDetailsSection from "../components/CampaignDetailsSection";
+import { toCurrencyString } from "../utils/format";
 
-const DEFAULT_TARGET_SALES_AMOUNT_USDC = 10000;
 const DEFAULT_PRIZE_COUNT = 1;
 const DEAFULT_PRIZE_AMOUNT = 0;
 
@@ -28,7 +28,7 @@ const defaultConfig: CampaignConfig = {
   },
   end: "targetSalesReached",
   endDate: undefined,
-  endSalesAmount: DEFAULT_TARGET_SALES_AMOUNT_USDC,
+  endSalesAmount: undefined,
 };
 
 interface StepParams {
@@ -43,13 +43,20 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
   return (
     <>
       <p className="pb-2">What is your sales volume goal for this campaign?</p>
-      {/* <p>Campaign ends when this sales amount is reached.</p> */}
-      <div className="w-40">
-        <NumberInput
-          suffix="USDC"
-          value={config.endSalesAmount}
-          onChange={setEndSalesAmount}
-        />
+      <div className="flex flex-row items-center">
+        <div className="w-40">
+          <NumberInput
+            suffix="USDC"
+            value={config.endSalesAmount}
+            onChange={setEndSalesAmount}
+            placeholder={"e.g. 10000"}
+          />
+        </div>
+        <div className="px-2 dark:text-secondary-dark">
+          <InfoMessage icon={MessageIcon.Info}>
+            Campaign ends when this sales amount is reached.
+          </InfoMessage>
+        </div>
       </div>
     </>
   );
@@ -215,10 +222,21 @@ const CreateCampaign: FC = () => {
 
   return (
     <>
-      <Modal open={open} setOpen={setOpen} onConfirm={handleGoToDetails} />
+      <ConfirmModal
+        open={open}
+        setOpen={setOpen}
+        onConfirm={handleGoToDetails}
+        icon={ModalIcon.Check}
+        confirmText="Campaign Details"
+      >
+        <p className="text-sm text-gray-500">
+          Your campaign was successfully created! You can now navigate to the
+          campaign details page in order to add funds and start it.
+        </p>
+      </ConfirmModal>
       <div>
-        <BackLink pathname={"/campaigns"}>{"< All campaigns"}</BackLink>
-        <Heading>Setup Rewards Campaign</Heading>
+        <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
+        <SectionHeading>Setup Rewards Campaign</SectionHeading>
         <Hr />
         <Wizard onConfirm={handleCreate} confirmText={"Create Campaign"}>
           <Step1SalesGoal config={config} setConfig={setConfig} />

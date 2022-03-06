@@ -1,9 +1,11 @@
-import React, { FC, ReactNode } from "react";
-import { Fragment, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Dialog, Transition } from "@headlessui/react";
-import { CheckCircleIcon, CheckIcon } from "@heroicons/react/outline";
+import { CheckIcon } from "@heroicons/react/outline";
+import React, { FC, Fragment, ReactNode } from "react";
 import Button from "./Button";
+
+export enum ModalIcon {
+  Check,
+}
 
 interface props {
   open: boolean;
@@ -11,6 +13,8 @@ interface props {
   onConfirm: () => void;
   children?: ReactNode;
   title?: string;
+  icon?: ModalIcon;
+  confirmText?: string;
 }
 
 const ConfirmModal: FC<props> = ({
@@ -19,6 +23,8 @@ const ConfirmModal: FC<props> = ({
   onConfirm,
   children,
   title,
+  icon,
+  confirmText,
 }) => {
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -59,6 +65,14 @@ const ConfirmModal: FC<props> = ({
             <div className="relative inline-block align-bottom dark:bg-modal-bg-dark rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="dark:bg-modal-bg-dark px-4 pt-5 pb-4 sm:p-10 sm:pb-6">
                 <div className="sm:flex sm:items-start flex-col">
+                  {icon === ModalIcon.Check && (
+                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-14 w-14 rounded-full bg-green-500 sm:mx-0 sm:h-12 sm:w-12">
+                      <CheckIcon
+                        className="h-7 w-7 dark:text-modal-bg-dark"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
                   <div className="mt-3 text-center sm:mt-4 sm:ml-0 sm:text-left">
                     <Dialog.Title
                       as="h2"
@@ -71,7 +85,7 @@ const ConfirmModal: FC<props> = ({
                 </div>
                 <div className="my-4">
                   <Button onClick={onConfirm} small>
-                    Okay
+                    {confirmText ?? "Okay"}
                   </Button>
                 </div>
               </div>

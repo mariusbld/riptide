@@ -1,8 +1,8 @@
 import React, { FC } from "react";
-import { getTotalPrizeAmount } from "../utils/campaign";
-import { CampaignConfig } from "../hooks/useProgram";
-import { toCurrencyString } from "../utils/format";
 import Gift from "../components/svg/Gift";
+import { CampaignConfig } from "../hooks/useProgram";
+import { getTotalPrizeAmount } from "../utils/campaign";
+import { toCurrencyString } from "../utils/format";
 
 const CampaignDetailsSection: FC<{ config: CampaignConfig }> = ({ config }) => {
   const totalAmount = getTotalPrizeAmount(config.prizeData);

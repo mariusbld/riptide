@@ -1,28 +1,21 @@
-import React, {
-  FC,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
-  useProgram,
-  CampaignState,
-  CampaignWithFunds,
-} from "../hooks/useProgram";
+import { PublicKey } from "@solana/web3.js";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Button from "../components/Button";
-import { toCurrencyString, toDisplayString } from "../utils/format";
-import { PublicKey } from "@solana/web3.js";
-import BackLink from "../components/BackLink";
-import Heading from "../components/Heading";
-import Hr from "../components/Hr";
 import CampaignDetailsSection from "../components/CampaignDetailsSection";
-import { CheckCircleIcon } from "@heroicons/react/outline";
-import ConfirmModal from "../components/ConfirmModal";
-import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
 import CampaignStatsSection from "../components/CampaignStatsSection";
+import ConfirmModal from "../components/ConfirmModal";
+import Hr from "../components/Hr";
+import InfoMessage from "../components/InfoMessage";
+import NavLink from "../components/NavLink";
+import SectionHeading from "../components/SectionHeading";
+import {
+  CampaignState,
+  CampaignWithFunds,
+  useProgram,
+} from "../hooks/useProgram";
+import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
+import { toCurrencyString, toDisplayString } from "../utils/format";
 
 const AddFunds: FC<{
   campaign: CampaignWithFunds;
@@ -43,7 +36,7 @@ const AddFunds: FC<{
   if (missingFunds === 0) {
     return (
       <div className="py-4">
-        <SuccessMessage>Prize funds have been deposited.</SuccessMessage>
+        <InfoMessage>Prize funds have been deposited.</InfoMessage>
       </div>
     );
   }
@@ -87,7 +80,7 @@ const WithdrawFunds: FC<{
   if (vaultFunds === 0) {
     return (
       <div className="py-4">
-        <SuccessMessage>No funds to withdraw.</SuccessMessage>
+        <InfoMessage>No funds to withdraw.</InfoMessage>
       </div>
     );
   }
@@ -107,15 +100,6 @@ const WithdrawFunds: FC<{
     </>
   );
 };
-
-const SuccessMessage: FC<{ children?: ReactNode }> = ({ children }) => (
-  <div className="flex flex-row">
-    <span>
-      <CheckCircleIcon className="h-6 w-6" />
-    </span>
-    <span className="px-1">{children}</span>
-  </div>
-);
 
 const DraftCampaign: FC<{
   campaign: CampaignWithFunds;
@@ -161,9 +145,9 @@ const DraftCampaign: FC<{
       </ConfirmModal>
       <CampaignDetailsSection config={campaign.config} />
       <Hr />
-      <SuccessMessage>
+      <InfoMessage>
         Your campaign has been successfully initialized!
-      </SuccessMessage>
+      </InfoMessage>
       <AddFunds refresh={refresh} campaign={campaign} />
       <Hr />
       <div className="md:flex items-center justify-end">
@@ -360,13 +344,13 @@ const CampaignDetails: FC = () => {
 
   return (
     <div>
-      <BackLink pathname={"/campaigns"}>{"< All campaigns"}</BackLink>
-      <Heading>
+      <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
+      <SectionHeading>
         Campaign Details -{" "}
         <span className="dark:text-secondary-dark underline">
           [{toDisplayString(campaignId)}]
         </span>
-      </Heading>
+      </SectionHeading>
       <Hr />
       {loading && <div>Loading</div>}
       {isDraft && <DraftCampaign refresh={refresh} campaign={campaign} />}

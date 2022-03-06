@@ -1,12 +1,12 @@
+import { ChartSquareBarIcon } from "@heroicons/react/outline";
 import React, { FC } from "react";
+import { CampaignWithFunds } from "../hooks/useProgram";
 import {
   getAwardedPrizeAmount,
   getAwardedPrizeCount,
   getTotalPrizeAmount,
 } from "../utils/campaign";
-import { CampaignWithFunds } from "../hooks/useProgram";
 import { toCurrencyString } from "../utils/format";
-import { ChartBarIcon, ChartSquareBarIcon } from "@heroicons/react/outline";
 
 const CampaignStatsSection: FC<{ campaign: CampaignWithFunds }> = ({
   campaign,
