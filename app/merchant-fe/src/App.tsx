@@ -1,4 +1,6 @@
-import { WalletProvider } from "@solana/wallet-adapter-react";
+import { ChevronDownIcon } from "@heroicons/react/outline";
+import { ExternalLinkIcon } from "@heroicons/react/solid";
+import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
   WalletMultiButton,
@@ -8,8 +10,10 @@ import {
   PhantomWalletAdapter,
   TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import React, { FC, ReactNode, useMemo } from "react";
+import { PublicKey } from "@solana/web3.js";
+import React, { FC, ReactNode, useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import Dropdown, { DropdownItem } from "./components/Dropdown";
 import PhoriaLogo from "./components/svg/PhoriaLogo";
 import ToggleButton from "./components/ToggleButton";
 import { ConnectionProvider } from "./contexts/ConnectionProvider";
@@ -17,7 +21,23 @@ import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useDarkMode } from "./hooks/useDarkMode";
+import { useProgram } from "./hooks/useProgram";
 import Home from "./pages/Home";
+
+const POS_URL = process.env.REACT_APP_POS_URL ?? "";
+const PHORIA_KEY = "3KWrAATE9T9vQ59o5szJoubM9Yte2TTeq7WvrsjAYQh1";
+const PHORIA_LABEL = "Solana Pay POS";
+
+const getPosUrl = (walletKey: PublicKey, campaignKeys: PublicKey[]): string => {
+  const url = new URL(POS_URL);
+  url.searchParams.append("recipient", walletKey.toString());
+  url.searchParams.append("label", PHORIA_LABEL);
+  url.searchParams.append("reference", PHORIA_KEY);
+  campaignKeys.forEach((key) =>
+    url.searchParams.append("reference", key.toString())
+  );
+  return url.toString();
+};
 
 export const App: FC = () => (
   <Context>
@@ -48,6 +68,27 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
 
 const Navbar: FC = () => {
   const { toggle } = useDarkMode();
+  const wallet = useWallet();
+  const program = useProgram();
+  const [posUrl, setPosUrl] = useState<string>();
+
+  useEffect(() => {
+    (async () => {
+      if (!wallet || !wallet.connected || !wallet.publicKey || !program) {
+        setPosUrl(undefined);
+        return;
+      }
+      const activeCampaigns = await program.listActiveCampaigns();
+      const activeCampaignKeys = activeCampaigns.map((c) => c.id);
+      const url = getPosUrl(wallet.publicKey, activeCampaignKeys);
+      setPosUrl(url);
+    })();
+  }, [wallet, wallet.connected, program]);
+
+  const copyPosUrl = () => {
+    posUrl && navigator.clipboard.writeText(posUrl);
+  };
+
   return (
     <div className="flex justify-between items-baseline py-8 md:justify-start md:space-x-10">
       <div className="flex justify-start lg:w-0 lg:flex-1">
@@ -57,7 +98,20 @@ const Navbar: FC = () => {
         </Link>
       </div>
       <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
-        <ToggleButton onChange={toggle} />
+        <div className="mr-8">
+          <ToggleButton onChange={toggle} />
+        </div>
+        <Dropdown disabled={!posUrl} transparent label="Point of Sale">
+          <DropdownItem href={posUrl}>
+            <div className="flex flex-row items-center justify-between">
+              <span>Open</span>
+              <span>
+                <ExternalLinkIcon className="w-5 h-5 ml-1" />
+              </span>
+            </div>
+          </DropdownItem>
+          <DropdownItem onClick={copyPosUrl}>Copy Link</DropdownItem>
+        </Dropdown>
         <div className="ml-8">
           <WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />
         </div>
