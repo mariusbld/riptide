@@ -69,33 +69,6 @@ const Dropdown: FC<props> = ({ disabled, label, transparent, children }) => {
         <Menu.Items className="origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
           <div className="py-1">
             {children}
-            {/* <Menu.Item>
-              {({ active }) => (
-                <a
-                  href="#"
-                  onClick={() => alert('Yes')}
-                  className={classNames(
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                    'block px-4 py-2 text-sm'
-                  )}
-                >
-                  Copy Link
-                </a>
-              )}
-            </Menu.Item>
-            <Menu.Item>
-              {({ active }) => (
-                <a
-                  href="#"
-                  className={classNames(
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                    'block px-4 py-2 text-sm'
-                  )}
-                >
-                  Show Keys
-                </a>
-              )}
-            </Menu.Item> */}
           </div>
         </Menu.Items>
       </Transition>
