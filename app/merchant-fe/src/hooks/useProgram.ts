@@ -73,6 +73,7 @@ export interface ProgramContextState {
   addCampaignFunds(id: CampaignId, amount: number): Promise<void>;
   withdrawCampaignFunds(id: CampaignId, vault: Vault): Promise<void>;
   listCampaigns(): Promise<Campaign[]>;
+  listActiveCampaigns(): Promise<Campaign[]>;
   startCampaign(id: CampaignId): Promise<void>;
   stopCampaign(id: CampaignId): Promise<void>;
   revokeCampaign(id: CampaignId): Promise<void>;

@@ -71,6 +71,9 @@ class UnavailableClient implements ProgramContextState {
   listCampaigns(): Promise<Campaign[]> {
     throw new Error("Program unavailable");
   }
+  listActiveCampaigns(): Promise<Campaign[]> {
+    throw new Error("Program unavailable");
+  }
   startCampaign(id: CampaignId): Promise<void> {
     throw new Error("Program unavailable");
   }
@@ -198,6 +201,14 @@ class Client implements ProgramContextState {
     ]);
     return campaignAccounts.map((e) =>
       Client.campaignFromAccount(e.publicKey, e.account)
+    );
+  }
+
+  async listActiveCampaigns(): Promise<Campaign[]> {
+    const campaigns = await this.listCampaigns();
+    return campaigns.filter(
+      (c) =>
+        c.state === CampaignState.Started || c.state === CampaignState.Stopped
     );
   }
 
