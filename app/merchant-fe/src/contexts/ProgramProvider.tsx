@@ -12,6 +12,7 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import React, { FC, ReactNode, useMemo } from "react";
+import { EndpointName, useEndpoint } from "../hooks/useEndpoint";
 import {
   Campaign,
   CampaignConfig,
@@ -26,8 +27,14 @@ import {
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
 
-const PROGRAM_ID = "371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL";
+// const PROGRAM_ID = "371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL";
+const PROGRAM_ID = "2u551QiRFv6YjTFVCN3sjMBnaPKXqxKLmJKyiV69SKau";
 const BASE_ACCOUNT_OFFSET = 8;
+
+const USDC_MINT = new Map<EndpointName, PublicKey>([
+  ["local", new PublicKey("CwP87NfhNJuwHpbGt8yBZLS1T8uTSGkf9tDJjqQjTwrj")],
+  ["devnet", new PublicKey("BQMJtns23gcmAX1vxPrsSJML2keeVrgk57eCvb1s5vhs")],
+]);
 
 export interface ProgramProviderProps {
   children: ReactNode;
@@ -35,6 +42,7 @@ export interface ProgramProviderProps {
 
 export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
   const provider = useProvider();
+  const { endpoint } = useEndpoint();
 
   const program = useMemo<Nullable<Program>>(() => {
     if (!provider) {
@@ -47,8 +55,8 @@ export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
     if (!program) {
       return new UnavailableClient();
     }
-    return new Client(program);
-  }, [program]);
+    return new Client(program, endpoint);
+  }, [program, endpoint]);
 
   return (
     <ProgramContext.Provider value={client}>{children}</ProgramContext.Provider>
@@ -86,19 +94,20 @@ class UnavailableClient implements ProgramContextState {
 }
 
 class Client implements ProgramContextState {
+  endpoint: EndpointName;
   program: Program;
   provider: anchor.Provider;
   wallet: PublicKey;
+  usdcMint: PublicKey;
 
   static CAMPAIGN_PDA_SEED = "campaign";
-  static USDC_MINT = new PublicKey(
-    "CwP87NfhNJuwHpbGt8yBZLS1T8uTSGkf9tDJjqQjTwrj"
-  );
 
-  constructor(program: Program) {
+  constructor(program: Program, endpoint: EndpointName) {
+    this.endpoint = endpoint;
     this.program = program;
     this.provider = program.provider;
     this.wallet = program.provider.wallet.publicKey;
+    this.usdcMint = USDC_MINT.get(endpoint)!;
   }
 
   async getPda(): Promise<[PublicKey, number]> {
@@ -113,7 +122,7 @@ class Client implements ProgramContextState {
     amount: number
   ): Promise<void> {
     const srcToken = await getAssociatedTokenAddress(
-      Client.USDC_MINT,
+      this.usdcMint,
       this.provider.wallet.publicKey
     );
     const vaultTokenAccount = Keypair.generate();
@@ -125,7 +134,7 @@ class Client implements ProgramContextState {
         owner: this.provider.wallet.publicKey,
         srcToken,
         vaultToken: vaultTokenAccount.publicKey,
-        mint: Client.USDC_MINT,
+        mint: this.usdcMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
         rent: SYSVAR_RENT_PUBKEY,
