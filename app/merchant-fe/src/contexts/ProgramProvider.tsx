@@ -3,16 +3,16 @@ import { Idl, Program } from "@project-serum/anchor";
 import {
   getAccount,
   getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import {
   Keypair,
   PublicKey,
   SystemProgram,
-  SYSVAR_RENT_PUBKEY,
+  SYSVAR_RENT_PUBKEY
 } from "@solana/web3.js";
 import React, { FC, ReactNode, useMemo } from "react";
-import { EndpointName, useEndpoint } from "../hooks/useEndpoint";
+import { useConfig } from "../hooks/useConfig";
 import {
   Campaign,
   CampaignConfig,
@@ -22,19 +22,12 @@ import {
   ProgramContext,
   ProgramContextState,
   Vault,
-  VaultWithFunds,
+  VaultWithFunds
 } from "../hooks/useProgram";
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
 
-// const PROGRAM_ID = "371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL";
-const PROGRAM_ID = "2u551QiRFv6YjTFVCN3sjMBnaPKXqxKLmJKyiV69SKau";
 const BASE_ACCOUNT_OFFSET = 8;
-
-const USDC_MINT = new Map<EndpointName, PublicKey>([
-  ["local", new PublicKey("CwP87NfhNJuwHpbGt8yBZLS1T8uTSGkf9tDJjqQjTwrj")],
-  ["devnet", new PublicKey("BQMJtns23gcmAX1vxPrsSJML2keeVrgk57eCvb1s5vhs")],
-]);
 
 export interface ProgramProviderProps {
   children: ReactNode;
@@ -42,21 +35,21 @@ export interface ProgramProviderProps {
 
 export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
   const provider = useProvider();
-  const { endpoint } = useEndpoint();
+  const { usdcMint, programId } = useConfig();
 
   const program = useMemo<Nullable<Program>>(() => {
     if (!provider) {
       return null;
     }
-    return new Program(idl as Idl, PROGRAM_ID, provider);
+    return new Program(idl as Idl, programId, provider);
   }, [provider]);
 
   const client = useMemo<ProgramContextState>(() => {
     if (!program) {
       return new UnavailableClient();
     }
-    return new Client(program, endpoint);
-  }, [program, endpoint]);
+    return new Client(program, usdcMint.publicKey);
+  }, [program, usdcMint]);
 
   return (
     <ProgramContext.Provider value={client}>{children}</ProgramContext.Provider>
@@ -94,7 +87,6 @@ class UnavailableClient implements ProgramContextState {
 }
 
 class Client implements ProgramContextState {
-  endpoint: EndpointName;
   program: Program;
   provider: anchor.Provider;
   wallet: PublicKey;
@@ -102,12 +94,11 @@ class Client implements ProgramContextState {
 
   static CAMPAIGN_PDA_SEED = "campaign";
 
-  constructor(program: Program, endpoint: EndpointName) {
-    this.endpoint = endpoint;
+  constructor(program: Program, usdcMint: PublicKey) {
     this.program = program;
     this.provider = program.provider;
     this.wallet = program.provider.wallet.publicKey;
-    this.usdcMint = USDC_MINT.get(endpoint)!;
+    this.usdcMint = usdcMint;
   }
 
   async getPda(): Promise<[PublicKey, number]> {

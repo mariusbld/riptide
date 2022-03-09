@@ -1,21 +1,21 @@
-import { ChevronDownIcon } from "@heroicons/react/outline";
 import { ExternalLinkIcon } from "@heroicons/react/solid";
 import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton,
+  WalletMultiButton
 } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter,
+  TorusWalletAdapter
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
-import React, { FC, ReactNode, useMemo, useState, useEffect } from "react";
+import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Dropdown, { DropdownItem } from "./components/Dropdown";
 import PhoriaLogo from "./components/svg/PhoriaLogo";
 import ToggleButton from "./components/ToggleButton";
+import { ConfigProvider } from "./contexts/ConfigProvider";
 import { ConnectionProvider } from "./contexts/ConnectionProvider";
 import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
@@ -56,13 +56,15 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <DarkModeProvider>
       <EndpointProvider>
-        <ConnectionProvider>
-          <WalletProvider wallets={wallets} autoConnect>
-            <WalletModalProvider>
-              <ProgramProvider>{children}</ProgramProvider>
-            </WalletModalProvider>
-          </WalletProvider>
-        </ConnectionProvider>
+        <ConfigProvider>
+          <ConnectionProvider>
+            <WalletProvider wallets={wallets} autoConnect>
+              <WalletModalProvider>
+                <ProgramProvider>{children}</ProgramProvider>
+              </WalletModalProvider>
+            </WalletProvider>
+          </ConnectionProvider>
+        </ConfigProvider>
       </EndpointProvider>
     </DarkModeProvider>
   );

@@ -7,8 +7,8 @@ export const toDisplayString = (pk: PublicKey): string => {
   return `${top}...${bottom}`;
 };
 
-export const toCurrencyString = (n: number): string => {
-  return n.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+export const toCurrencyString = (n: number, d: number = 0): string => {
+  return (n / 10 ** d).toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 };
 
 export const capitalize = (s: string): string => {

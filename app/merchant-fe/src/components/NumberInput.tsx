@@ -8,6 +8,7 @@ interface props {
   onChange?: (val: number) => void;
   integer?: boolean;
   placeholder?: string;
+  decimals?: number;
 }
 
 const NumberInput: FC<props> = ({
@@ -17,6 +18,7 @@ const NumberInput: FC<props> = ({
   onChange,
   integer,
   placeholder,
+  decimals = 0,
 }) => {
   const { current: inputId } = useRef(uniqueId());
   const handleChange = (strVal: string) => {
@@ -24,7 +26,7 @@ const NumberInput: FC<props> = ({
     if (integer) {
       val = parseInt(strVal);
     } else {
-      val = parseFloat(strVal);
+      val = parseFloat(strVal) * 10 ** decimals;
     }
     onChange && onChange(val);
   };
@@ -47,7 +49,7 @@ const NumberInput: FC<props> = ({
           type="number"
           name={`number-${inputId}`}
           min={0}
-          value={value}
+          value={value ? value / 10 ** decimals : ""}
           onChange={(e) => handleChange(e.target.value)}
           id={inputId}
           className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-full dark:bg-input-bg-dark dark:hover:bg-input-bg-hv-dark dark:text-primary-dark dark:placeholder:text-primary-dark"

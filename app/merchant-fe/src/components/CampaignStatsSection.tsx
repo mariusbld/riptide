@@ -1,16 +1,18 @@
 import { ChartSquareBarIcon } from "@heroicons/react/outline";
 import React, { FC } from "react";
+import { useConfig } from "../hooks/useConfig";
 import { CampaignWithFunds } from "../hooks/useProgram";
 import {
   getAwardedPrizeAmount,
   getAwardedPrizeCount,
-  getTotalPrizeAmount,
+  getTotalPrizeAmount
 } from "../utils/campaign";
 import { toCurrencyString } from "../utils/format";
 
 const CampaignStatsSection: FC<{ campaign: CampaignWithFunds }> = ({
   campaign,
 }) => {
+  const { usdcMint } = useConfig();
   const { config } = campaign;
   const currSalesAmount = campaign.stats.runningSalesAmount;
   const totalSalesAmount = campaign.config.endSalesAmount!;
@@ -25,14 +27,14 @@ const CampaignStatsSection: FC<{ campaign: CampaignWithFunds }> = ({
         <div className="flex flex-row items-start py-2">
           <div className="w-48 font-bold">Sales (USDC):</div>
           <div className="w-40">
-            {toCurrencyString(currSalesAmount)}
+            {toCurrencyString(currSalesAmount, usdcMint.decimals)}
             {` (${percentSales}%)`}
           </div>
         </div>
         <div className="flex flex-row items-start py-2">
           <div className="w-48 font-bold">Prizes Awarded (USDC):</div>
           <div className="w-40">
-            {toCurrencyString(awardedPrizeAmount)}
+            {toCurrencyString(awardedPrizeAmount, usdcMint.decimals)}
             {` (${percentAwarded}%)`}
           </div>
         </div>
