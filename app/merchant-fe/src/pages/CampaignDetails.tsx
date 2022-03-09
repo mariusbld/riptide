@@ -9,6 +9,7 @@ import Hr from "../components/Hr";
 import InfoMessage from "../components/InfoMessage";
 import NavLink from "../components/NavLink";
 import SectionHeading from "../components/SectionHeading";
+import { useConfig } from "../hooks/useConfig";
 import {
   CampaignState,
   CampaignWithFunds,
@@ -21,6 +22,7 @@ const AddFunds: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
 }> = ({ campaign, refresh }) => {
+  const { usdcMint } = useConfig();
   const program = useProgram();
   const missingFunds = getMissingPrizeFunds(campaign);
 
@@ -46,7 +48,7 @@ const AddFunds: FC<{
       <div className="py-4">
         You will need to deposit{" "}
         <span className="underline font-bold dark:text-secondary-dark">
-          {toCurrencyString(missingFunds)} USDC
+          {toCurrencyString(missingFunds, usdcMint.decimals)} USDC
         </span>{" "}
         in order to start the campaign.
       </div>
@@ -61,6 +63,7 @@ const WithdrawFunds: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
 }> = ({ campaign, refresh }) => {
+  const { usdcMint } = useConfig();
   const program = useProgram();
   const vaultFunds = getVaultFunds(campaign);
   const vault = useMemo(() => campaign.vaults.at(0), [campaign]);
@@ -90,7 +93,7 @@ const WithdrawFunds: FC<{
       <div className="py-4">
         You can withdraw{" "}
         <span className="underline font-bold dark:text-secondary-dark">
-          {toCurrencyString(vaultFunds)} USDC
+          {toCurrencyString(vaultFunds, usdcMint.decimals)} USDC
         </span>{" "}
         worth of funds not awarded.
       </div>

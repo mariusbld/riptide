@@ -1,21 +1,27 @@
 import { ChevronRightIcon } from "@heroicons/react/outline";
 import React, { FC, useEffect, useMemo, useState } from "react";
+import CircleDecoration from "../components/CircleDecoration";
 import Hr from "../components/Hr";
 import NavLink from "../components/NavLink";
 import SectionHeading from "../components/SectionHeading";
+import { useConfig } from "../hooks/useConfig";
 import { Campaign, CampaignState, useProgram } from "../hooks/useProgram";
 import { getTotalPrizeAmount } from "../utils/campaign";
 import { toCurrencyString, toDisplayString } from "../utils/format";
-import CircleDecoration from "../components/CircleDecoration";
 
 const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
+  const { usdcMint } = useConfig();
   return (
     <div className="grid grid-cols-3">
       <NavLink pathname={`/campaigns/${campaign.id.toString()}`}>
         <div className="underline">{toDisplayString(campaign.id)}</div>
       </NavLink>
       <div className="text-right">
-        {toCurrencyString(getTotalPrizeAmount(campaign.config.prizeData))} USDC
+        {toCurrencyString(
+          getTotalPrizeAmount(campaign.config.prizeData),
+          usdcMint.decimals
+        )}{" "}
+        USDC
       </div>
       <div className="text-right">{new Date().toDateString()}</div>
     </div>

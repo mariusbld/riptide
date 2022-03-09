@@ -10,11 +10,12 @@ import NavLink from "../components/NavLink";
 import NumberInput from "../components/NumberInput";
 import SectionHeading from "../components/SectionHeading";
 import Wizard from "../components/Wizard";
+import { useConfig } from "../hooks/useConfig";
 import {
   CampaignConfig,
   Prize,
   PrizeData,
-  useProgram,
+  useProgram
 } from "../hooks/useProgram";
 import { getTotalPrizeAmount } from "../utils/campaign";
 import { toCurrencyString } from "../utils/format";
@@ -39,6 +40,7 @@ interface StepParams {
 const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
   const setEndSalesAmount = (endSalesAmount: number) =>
     setConfig({ ...config, endSalesAmount });
+  const { usdcMint } = useConfig();
 
   return (
     <>
@@ -50,6 +52,7 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
             value={config.endSalesAmount}
             onChange={setEndSalesAmount}
             placeholder={"e.g. 10000"}
+            decimals={usdcMint.decimals}
           />
         </div>
         <div className="px-2 dark:text-secondary-dark">
@@ -63,6 +66,7 @@ const Step1SalesGoal: FC<StepParams> = ({ config, setConfig }) => {
 };
 
 const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
+  const { usdcMint } = useConfig();
   const [count, setCount] = useState(DEFAULT_PRIZE_COUNT);
   const [amount, setAmount] = useState(DEAFULT_PRIZE_AMOUNT);
   const valid = useMemo(() => count > 0 && amount > 0, [count, amount]);
@@ -95,6 +99,7 @@ const AddPrize: FC<{ onAdd: (prize: Prize) => void }> = ({ onAdd }) => {
           suffix="USDC"
           value={amount}
           onChange={setAmount}
+          decimals={usdcMint.decimals}
         />
       </div>
       <Button small disabled={!valid} onClick={handleAdd}>
@@ -108,6 +113,7 @@ const PrizeTable: FC<{
   prizeData: PrizeData;
   remove?: (idx: number) => void;
 }> = ({ prizeData, remove }) => {
+  const { usdcMint } = useConfig();
   const totalAmount = getTotalPrizeAmount(prizeData);
   const sortByAmountDesc = (a: Prize, b: Prize): number => b.amount - a.amount;
   return (
@@ -120,12 +126,12 @@ const PrizeTable: FC<{
           <div className="py-2">{prize.count}</div>
           <div className="py-2">{" X "}</div>
           <div className="py-2 col-span-2 text-right">
-            {toCurrencyString(prize.amount)}
+            {toCurrencyString(prize.amount, usdcMint.decimals)}
             {" USDC "}
           </div>
           <div className="py-2">{" = "}</div>
           <div className="py-2 col-span-2 text-right">
-            {toCurrencyString(prize.count * prize.amount)}
+            {toCurrencyString(prize.count * prize.amount, usdcMint.decimals)}
             {" USDC "}
           </div>
           <div className="col-span-2 text-right hidden group-hover:block">
@@ -142,7 +148,7 @@ const PrizeTable: FC<{
         <div className="col-span-2 text-right">Total</div>
         <div>{" = "}</div>
         <div className="col-span-2 text-right">
-          {toCurrencyString(totalAmount)}
+          {toCurrencyString(totalAmount, usdcMint.decimals)}
           {" USDC"}
         </div>
         <div className="col-span-2"></div>
