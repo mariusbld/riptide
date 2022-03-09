@@ -21,8 +21,10 @@ import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useDarkMode } from "./hooks/useDarkMode";
+import { useEndpoint } from "./hooks/useEndpoint";
 import { useProgram } from "./hooks/useProgram";
 import Home from "./pages/Home";
+import { capitalize } from "./utils/format";
 
 const POS_URL = process.env.REACT_APP_POS_URL ?? "";
 const PHORIA_KEY = "3KWrAATE9T9vQ59o5szJoubM9Yte2TTeq7WvrsjAYQh1";
@@ -71,6 +73,7 @@ const Navbar: FC = () => {
   const wallet = useWallet();
   const program = useProgram();
   const [posUrl, setPosUrl] = useState<string>();
+  const { endpoint, setEndpoint } = useEndpoint();
 
   useEffect(() => {
     (async () => {
@@ -111,6 +114,14 @@ const Navbar: FC = () => {
             </div>
           </DropdownItem>
           <DropdownItem onClick={copyPosUrl}>Copy Link</DropdownItem>
+        </Dropdown>
+        <Dropdown transparent label={capitalize(endpoint)}>
+          <DropdownItem onClick={() => setEndpoint("local")}>
+            Local
+          </DropdownItem>
+          <DropdownItem onClick={() => setEndpoint("devnet")}>
+            Devnet
+          </DropdownItem>
         </Dropdown>
         <div className="ml-8">
           <WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />

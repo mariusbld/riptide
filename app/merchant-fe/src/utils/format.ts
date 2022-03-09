@@ -10,3 +10,10 @@ export const toDisplayString = (pk: PublicKey): string => {
 export const toCurrencyString = (n: number): string => {
   return n.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
 };
+
+export const capitalize = (s: string): string => {
+  if (s.length < 1) {
+    return s;
+  }
+  return s.slice(0, 1).toLocaleUpperCase() + s.slice(1);
+};
