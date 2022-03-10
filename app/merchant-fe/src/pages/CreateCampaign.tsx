@@ -15,7 +15,7 @@ import {
   CampaignConfig,
   Prize,
   PrizeData,
-  useProgram
+  useProgram,
 } from "../hooks/useProgram";
 import { getTotalPrizeAmount } from "../utils/campaign";
 import { toCurrencyString } from "../utils/format";

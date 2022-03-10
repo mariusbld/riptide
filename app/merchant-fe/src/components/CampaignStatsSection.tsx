@@ -5,7 +5,7 @@ import { CampaignWithFunds } from "../hooks/useProgram";
 import {
   getAwardedPrizeAmount,
   getAwardedPrizeCount,
-  getTotalPrizeAmount
+  getTotalPrizeAmount,
 } from "../utils/campaign";
 import { toCurrencyString } from "../utils/format";
 
@@ -28,14 +28,14 @@ const CampaignStatsSection: FC<{ campaign: CampaignWithFunds }> = ({
           <div className="w-48 font-bold">Sales (USDC):</div>
           <div className="w-40">
             {toCurrencyString(currSalesAmount, usdcMint.decimals)}
-            {` (${percentSales}%)`}
+            {` (${percentSales.toFixed(2)}%)`}
           </div>
         </div>
         <div className="flex flex-row items-start py-2">
           <div className="w-48 font-bold">Prizes Awarded (USDC):</div>
           <div className="w-40">
             {toCurrencyString(awardedPrizeAmount, usdcMint.decimals)}
-            {` (${percentAwarded}%)`}
+            {` (${percentAwarded.toFixed(2)}%)`}
           </div>
         </div>
         <div className="flex flex-row items-start py-2">
