@@ -4,15 +4,15 @@
   "author": "Marius Buleandra <mbuleandra@gmail.com>",
   "repository": "https://github.com/mariusbld/riptide-merchant",
   "scripts": {
-    "clean": "shx rm -rf dist .parcel-cache",
+    "clean": "rm -rf dist .parcel-cache",
     "build": "yarn clean && parcel build src/index.html",
     "start": "yarn clean && parcel src/index.html",
     "dev": "parcel serve src/index.html",
-    "docs": "shx rm -rf docs && typedoc && shx cp .nojekyll docs/",
+    "docs": "rm -rf docs && typedoc && cp .nojekyll docs/",
     "fmt": "prettier --write '{*,**/*}.{js,ts,jsx,tsx,json}'",
     "lint": "eslint . && prettier --check '{*,**/*}.{js,ts,jsx,tsx,json}'",
     "lint:fix": "eslint --fix . && yarn fmt",
-    "nuke": "shx rm -rf node_modules yarn.lock"
+    "nuke": "rm -rf node_modules yarn.lock"
   },
   "devDependencies": {
     "@parcel/transformer-sass": "2.3.2",
