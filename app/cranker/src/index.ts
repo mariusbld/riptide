@@ -215,7 +215,8 @@ async function crankCampaign(input: crankCampaignInput) {
   console.log(`Cranking ${JSON.stringify(input)}`);
   const amount = new BN(input.amount);
   const slot = new BN(input.slot);
-  const purchase = { amount, slot };
+  const hash = getTxHashUint32(input.txId);
+  const purchase = { amount, slot, hash };
   const { mint, token } = input.campaign.vaults[0];
   const vaultToken = token;
   const winnerToken = await getAssociatedTokenAddress(mint, input.buyer);
@@ -232,6 +233,17 @@ async function crankCampaign(input: crankCampaignInput) {
       slotHashes: web3.SYSVAR_SLOT_HASHES_PUBKEY,
     }
   });
+}
+
+function getTxHashUint32(txId: web3.TransactionSignature): number {
+  return getTxHash(txId, 4);
+}
+
+function getTxHash(txId: web3.TransactionSignature, bytes: number = 4): number {
+  const arr = base58.decode(txId);
+  const buffer = Buffer.from(arr.slice(arr.length - bytes, arr.length));
+  var result = buffer.readUIntBE(0, bytes);
+  return result;
 }
 
 // TODO: move these to a common lib, share with merchant-fe
