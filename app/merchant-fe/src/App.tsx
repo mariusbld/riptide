@@ -21,7 +21,7 @@ import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useDarkMode } from "./hooks/useDarkMode";
-import { useEndpoint } from "./hooks/useEndpoint";
+import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
 import { useProgram } from "./hooks/useProgram";
 import Home from "./pages/Home";
 import { capitalize } from "./utils/format";
@@ -40,6 +40,8 @@ const getPosUrl = (walletKey: PublicKey, campaignKeys: PublicKey[]): string => {
   );
   return url.toString();
 };
+
+const EndpointOptions: EndpointName[] = ["local", "devnet"];
 
 export const App: FC = () => (
   <Context>
@@ -118,12 +120,14 @@ const Navbar: FC = () => {
           <DropdownItem onClick={copyPosUrl}>Copy Link</DropdownItem>
         </Dropdown>
         <Dropdown transparent label={capitalize(endpoint)}>
-          <DropdownItem onClick={() => setEndpoint("local")}>
-            Local
-          </DropdownItem>
-          <DropdownItem onClick={() => setEndpoint("devnet")}>
-            Devnet
-          </DropdownItem>
+          {EndpointOptions.map((option) => (
+            <DropdownItem
+              onClick={() => setEndpoint(option)}
+              isSelected={option === endpoint}
+            >
+              {capitalize(option)}
+            </DropdownItem>
+          ))}
         </Dropdown>
         <div className="ml-8">
           <WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />
