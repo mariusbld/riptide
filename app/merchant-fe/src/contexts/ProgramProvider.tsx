@@ -6,13 +6,16 @@ import {
   TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import {
+  Connection,
   Keypair,
   PublicKey,
   SystemProgram,
-  SYSVAR_RENT_PUBKEY
+  SYSVAR_RENT_PUBKEY,
+  SYSVAR_SLOT_HASHES_PUBKEY
 } from "@solana/web3.js";
 import React, { FC, ReactNode, useMemo } from "react";
 import { useConfig } from "../hooks/useConfig";
+import { useEndpoint } from "../hooks/useEndpoint";
 import {
   Campaign,
   CampaignConfig,
@@ -22,7 +25,8 @@ import {
   ProgramContext,
   ProgramContextState,
   Vault,
-  VaultWithFunds
+  VaultWithFunds,
+  Winner
 } from "../hooks/useProgram";
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
@@ -36,6 +40,7 @@ export interface ProgramProviderProps {
 export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
   const provider = useProvider();
   const { usdcMint, programId } = useConfig();
+  const { url } = useEndpoint();
 
   const program = useMemo<Nullable<Program>>(() => {
     if (!provider) {
@@ -44,12 +49,17 @@ export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
     return new Program(idl as Idl, programId, provider);
   }, [provider]);
 
+  const queryConnection = useMemo(
+    () => new Connection(url, "confirmed"),
+    [url]
+  );
+
   const client = useMemo<ProgramContextState>(() => {
     if (!program) {
       return new UnavailableClient();
     }
-    return new Client(program, usdcMint.publicKey);
-  }, [program, usdcMint]);
+    return new Client(program, usdcMint.publicKey, queryConnection);
+  }, [program, usdcMint, queryConnection]);
 
   return (
     <ProgramContext.Provider value={client}>{children}</ProgramContext.Provider>
@@ -57,6 +67,9 @@ export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
 };
 
 class UnavailableClient implements ProgramContextState {
+  listCampaignWinners(id: CampaignId): Promise<Winner[]> {
+    throw new Error("Method not implemented.");
+  }
   addCampaignFunds(id: PublicKey, amount: number): Promise<void> {
     throw new Error("Method not implemented.");
   }
@@ -91,14 +104,21 @@ class Client implements ProgramContextState {
   provider: anchor.Provider;
   wallet: PublicKey;
   usdcMint: PublicKey;
+  // TODO: move this and all the API's to a QueryClient and QueryProvider
+  queryConnection: Connection;
 
   static CAMPAIGN_PDA_SEED = "campaign";
 
-  constructor(program: Program, usdcMint: PublicKey) {
+  constructor(
+    program: Program,
+    usdcMint: PublicKey,
+    queryConnection: Connection
+  ) {
     this.program = program;
     this.provider = program.provider;
     this.wallet = program.provider.wallet.publicKey;
     this.usdcMint = usdcMint;
+    this.queryConnection = queryConnection;
   }
 
   async getPda(): Promise<[PublicKey, number]> {
@@ -239,6 +259,45 @@ class Client implements ProgramContextState {
     });
   }
 
+  async listCampaignWinners(campaignId: CampaignId): Promise<Winner[]> {
+    const connection = this.queryConnection;
+    // TODO: loop through all txs, this api currently paginates at 1,000 transactions.
+    const infos = await connection.getSignaturesForAddress(
+      campaignId,
+      undefined,
+      "confirmed"
+    );
+    const sigs = infos.map((info) => info.signature);
+    if (sigs.length === 0) {
+      return [];
+    }
+    const rawTxs = await connection.getParsedTransactions(sigs);
+    const txs = rawTxs.filter(
+      (e) => e
+    ) as anchor.web3.ParsedTransactionWithMeta[];
+
+    // TODO: find a better method to determine crank transactions.
+    const crankTxs = txs.filter((tx) =>
+      tx.transaction.message.accountKeys
+        .map((a) => a.pubkey.toString())
+        .includes(SYSVAR_SLOT_HASHES_PUBKEY.toString())
+    );
+
+    // TODO: find a better method to determine winners.
+    const winnerTxs = crankTxs.filter(
+      (tx) => tx.meta?.innerInstructions?.length
+    );
+    const winners = winnerTxs
+      .map((tx) => ({
+        wallet: tx.transaction.message.accountKeys.find((a) => a.signer)
+          ?.pubkey,
+        date: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(),
+      }))
+      .filter((w) => w.wallet) as Winner[];
+
+    return winners;
+  }
+
   static campaignFromAccount(id: PublicKey, a: any): Campaign {
     return {
       id,
@@ -259,8 +318,8 @@ class Client implements ProgramContextState {
         prizeStats: a.stats.prizeStats.map((e: any) => ({
           awardedCount: e.awardedCount.toNumber(),
         })),
-        runningSalesAmount: 0,
-        runningSalesCount: 0,
+        runningSalesAmount: a.stats.runningSalesAmount.toNumber(),
+        runningSalesCount: a.stats.runningSalesCount.toNumber(),
         createdTime: new Date(),
         startTime: new Date(),
         endTime: new Date(),

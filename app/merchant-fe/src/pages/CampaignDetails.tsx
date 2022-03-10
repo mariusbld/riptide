@@ -14,6 +14,7 @@ import {
   CampaignState,
   CampaignWithFunds,
   useProgram,
+  Winner,
 } from "../hooks/useProgram";
 import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
 import { toCurrencyString, toDisplayString } from "../utils/format";
@@ -189,6 +190,11 @@ const ActiveCampaign: FC<{
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
 
+  const [winners, setWinners] = useState<Winner[]>([]);
+  useEffect(() => {
+    (async () => setWinners(await program.listCampaignWinners(campaign.id)))();
+  }, [campaign, program]);
+
   const stopAction: actionType = useMemo(
     () => ({
       name: "stop",
@@ -276,6 +282,18 @@ const ActiveCampaign: FC<{
       <Hr />
       <CampaignStatsSection campaign={campaign} />
       <Hr />
+      {winners.length > 0 && (
+        <>
+          <div className="font-bold pb-1">Winners</div>
+          {winners.map((w, idx) => (
+            <div key={idx}>
+              <span>{w.date.toDateString()} - </span>
+              <span>{w.wallet.toString()}</span>
+            </div>
+          ))}
+          <Hr />
+        </>
+      )}
       <div className="md:flex items-center justify-end">
         {campaignIsStopped && (
           <>

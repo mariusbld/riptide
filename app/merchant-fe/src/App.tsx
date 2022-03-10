@@ -2,12 +2,12 @@ import { ExternalLinkIcon } from "@heroicons/react/solid";
 import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton
+  WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter
+  TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
@@ -27,7 +27,7 @@ import Home from "./pages/Home";
 import { capitalize } from "./utils/format";
 
 const POS_URL = process.env.REACT_APP_POS_URL ?? "";
-const PHORIA_KEY = "3KWrAATE9T9vQ59o5szJoubM9Yte2TTeq7WvrsjAYQh1";
+const PHORIA_KEY = process.env.REACT_APP_PHORIA_KEY ?? "";
 const PHORIA_LABEL = "Solana Pay POS";
 
 const getPosUrl = (walletKey: PublicKey, campaignKeys: PublicKey[]): string => {

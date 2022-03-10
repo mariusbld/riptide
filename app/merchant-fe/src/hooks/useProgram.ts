@@ -67,6 +67,11 @@ export interface CampaignFunds {
 
 export type CampaignWithFunds = Campaign & CampaignFunds;
 
+export interface Winner {
+  wallet: PublicKey;
+  date: Date;
+}
+
 export interface ProgramContextState {
   createCampaign(conf: CampaignConfig): Promise<CampaignId>;
   getCampaign(id: CampaignId): Promise<CampaignWithFunds>;
@@ -77,6 +82,7 @@ export interface ProgramContextState {
   startCampaign(id: CampaignId): Promise<void>;
   stopCampaign(id: CampaignId): Promise<void>;
   revokeCampaign(id: CampaignId): Promise<void>;
+  listCampaignWinners(id: CampaignId): Promise<Winner[]>;
 }
 
 export const ProgramContext = createContext<ProgramContextState>(
