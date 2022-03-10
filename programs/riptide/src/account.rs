@@ -15,6 +15,7 @@ const SLOT_HASH_VEC_PREFIX_BYTES: usize = 8;
 const SLOT_HASH_ENTRY_SLOT_BYTES: usize = 8;
 const SLOT_HASH_SKIP_BYTES: usize = SLOT_HASH_VEC_PREFIX_BYTES + SLOT_HASH_ENTRY_SLOT_BYTES;
 const U64_SIZE_BYTES: usize = 8;
+const VISITED_ARR_SIZE: usize = 30; // 30 purchases / 10 minutes => 1 purchase every 20sec.
 
 #[error]
 pub enum RiptideError {
@@ -25,6 +26,7 @@ pub enum RiptideError {
     InternalErrorRandom,
     NotImplemented,
     PurchaseTooOld,
+    PurchaseAlreadySeen,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone, Debug)]
@@ -104,6 +106,7 @@ impl CampaignStats {
 pub struct Purchase {
     pub amount: u64,
     pub slot: u64,
+    pub hash: u32,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
@@ -121,12 +124,47 @@ pub enum CampaignState {
     Revoked,
 }
 
+#[derive(Clone, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct VisitedQueue {
+    pub next: u8,
+    pub count: u8,
+    pub queue: [u32; VISITED_ARR_SIZE],
+}
+
+impl VisitedQueue {
+    fn push(&mut self, val: u32) {
+        self.queue[self.next as usize] = val;
+        self.next = (self.next + 1) % (VISITED_ARR_SIZE as u8);
+        self.count = self.count + 1;
+        if self.count > VISITED_ARR_SIZE as u8 {
+            self.count = VISITED_ARR_SIZE as u8;
+        }
+    }
+    fn has(&self, val: u32) -> bool {
+        for idx in 0..self.next {
+            if self.queue[idx as usize] == val {
+                return true;
+            }
+        }
+        if self.count < VISITED_ARR_SIZE as u8 {
+            return false;
+        }
+        for idx in self.next..VISITED_ARR_SIZE as u8 {
+            if self.queue[idx as usize] == val {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 #[account]
 pub struct Campaign {
     pub owner: Pubkey,
     pub state: CampaignState,
     pub config: CampaignConfig,
     pub stats: CampaignStats,
+    pub visited: VisitedQueue,
     pub vaults: Vec<Vault>,
 }
 
@@ -166,6 +204,11 @@ impl Campaign {
         self.config = config.clone();
         self.stats.init(config.prize_data.entries.len());
         self.state = CampaignState::Initialized;
+        self.visited = VisitedQueue {
+            next: 0,
+            count: 0,
+            queue: [0; VISITED_ARR_SIZE],
+        };
         self.vaults = Vec::new();
         Ok(())
     }
@@ -212,6 +255,11 @@ impl Campaign {
         random: Random,
     ) -> ResultGeneric<Option<Prize>, ProgramError> {
         require!(self.can_crank(), RiptideError::InvalidState);
+        require!(
+            !self.visited.has(purchase.hash),
+            RiptideError::PurchaseAlreadySeen
+        );
+        self.visited.push(purchase.hash);
         self.stats.add_purchase(purchase);
         let winning_prob = self.get_winning_prob();
         require!(
