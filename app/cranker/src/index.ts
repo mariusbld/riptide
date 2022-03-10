@@ -44,6 +44,7 @@ const campaignCache = new Map<web3.PublicKey, Campaign>();
 interface crankCampaignInput {
   txId: web3.TransactionSignature;
   amount: number;
+  slot: number;
   buyer: web3.PublicKey;
   campaign: Campaign;
 }
@@ -160,6 +161,7 @@ async function parseTransactions(txs: web3.ParsedTransactionWithMeta[]): Promise
 
 async function parseTransaction(tx: web3.ParsedTransactionWithMeta): Promise<crankCampaignInput | null> {
   try {
+    const slot = tx.slot;
     const txId = tx.transaction.signatures[0];
     const buyer = tx.transaction.message.accountKeys.find(k => k.signer).pubkey;
 
@@ -176,7 +178,7 @@ async function parseTransaction(tx: web3.ParsedTransactionWithMeta): Promise<cra
       console.log(`cannot find campaign account. tx=${txId}`);
       return null;
     }
-    return { txId, buyer, campaign, amount };
+    return { txId, buyer, campaign, amount, slot };
   } catch (err) {
     console.log(`error parsing transaction: ${err}. tx=${JSON.stringify(tx)}`);
     return null;
@@ -212,7 +214,8 @@ function validCampaignAccount(account: web3.ParsedMessageAccount): boolean {
 async function crankCampaign(input: crankCampaignInput) {
   console.log(`Cranking ${JSON.stringify(input)}`);
   const amount = new BN(input.amount);
-  const purchase = { amount };
+  const slot = new BN(input.slot);
+  const purchase = { amount, slot };
   const { mint, token } = input.campaign.vaults[0];
   const vaultToken = token;
   const winnerToken = await getAssociatedTokenAddress(mint, input.buyer);

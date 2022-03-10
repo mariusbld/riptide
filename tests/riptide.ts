@@ -158,7 +158,10 @@ describe('riptide', () => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
     const amount = new anchor.BN(PURCHASE_AMOUNT);
-    const purchase = { amount };
+    
+    const epochInfo = await program.provider.connection.getEpochInfo();
+    const slot = new anchor.BN(epochInfo.absoluteSlot);
+    const purchase = { amount, slot };
 
     for (let i = 0; i < NUM_PURCHASES; i++) {
       await program.rpc.crankCampaign(bump, purchase, {
