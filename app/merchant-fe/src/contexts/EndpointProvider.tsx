@@ -16,7 +16,7 @@ const getEndpointUrl = (endpoint: EndpointName): string => {
 export const EndpointProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [endpoint, setEndpoint] = useLocalStorage(
     "endpoint",
-    "local" as EndpointName // default to local endpoint
+    "devnet" as EndpointName // default to devnet
   );
   const url = useMemo(() => getEndpointUrl(endpoint), [endpoint]);
   return (
