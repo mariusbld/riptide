@@ -5,7 +5,7 @@ import { DarkMode, DarkModeContext } from "../hooks/useDarkMode";
 const darkModeLocalKey = "darkMode";
 
 export const DarkModeProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [darkMode, setDarkMode] = useState<DarkMode>("light");
+  const [darkMode, setDarkMode] = useState<DarkMode>("dark");
 
   useEffect(() => {
     if (darkMode == "dark") {
