@@ -5,7 +5,7 @@
   "repository": "https://github.com/mariusbld/riptide-merchant",
   "scripts": {
     "clean": "rm -rf dist .parcel-cache",
-    "build": "yarn clean && parcel build src/index.html && echo '/* /index.html 200' | cat > dist/_redirects",
+    "build": "yarn clean && parcel build --no-scope-hoist src/index.html && echo '/* /index.html 200' | cat > dist/_redirects",
     "start": "yarn clean && parcel src/index.html && echo '/* /index.html 200' | cat > dist/_redirects",
     "dev": "parcel serve src/index.html",
     "docs": "rm -rf docs && typedoc && cp .nojekyll docs/",
