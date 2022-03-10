@@ -39,6 +39,7 @@ const campaignCache = new Map<web3.PublicKey, Campaign>();
 
 interface crankCampaignInput {
   txId: web3.TransactionSignature;
+  amount: number;
   buyer: web3.PublicKey;
   campaign: Campaign;
 }
@@ -64,10 +65,8 @@ async function fetchLatestTxSignatures(): Promise<web3.TransactionSignature[]> {
     };
     const sigInfoObjs = await connection
       .getSignaturesForAddress(phoriaPublicKey, opt, 'confirmed');
-    console.log(`sigInfoObjs: ${sigInfoObjs}`);
     hasMore = sigInfoObjs.length === FETCH_LIMIT;
     const txSignatureBatch = sigInfoObjs.map(o => o.signature);
-    console.log(`txSignatureBatch: ${txSignatureBatch}`);
     // txSignatures = txSignatures.concat(txSignatureBatch || []);
     // TODO: switch to the above.
     if (txSignatureBatch.length > 0) {
@@ -81,8 +80,6 @@ async function fetchLatestTxSignatures(): Promise<web3.TransactionSignature[]> {
 async function run() {
   try {
     const txSignatures = await fetchLatestTxSignatures();
-    console.log(`tx signatures: ${txSignatures}`);
-    console.log(`tx len(signatures): ${txSignatures.length}`);
     if (!txSignatures.length) {
       console.log(`No more transactions to process!`);
       return;
@@ -140,31 +137,59 @@ async function parseTransactions(txs: web3.ParsedTransactionWithMeta[]): Promise
 }
 
 async function parseTransaction(tx: web3.ParsedTransactionWithMeta): Promise<crankCampaignInput | null> {
-  let txId: web3.TransactionSignature;
-  let buyer: web3.PublicKey;
-  let campaignKey: web3.PublicKey;
-
   try {
-    txId = tx.transaction.signatures[0];
-    buyer = tx.transaction.message.accountKeys.find(k => k.signer).pubkey;
+    const txId = tx.transaction.signatures[0];
+    const buyer = tx.transaction.message.accountKeys.find(k => k.signer).pubkey;
+
+    const transferIx = tx.transaction.message.instructions.find(ix => {
+      const parsedIx = ix as web3.ParsedInstruction;
+      return parsedIx.programId.toString() === TOKEN_PROGRAM_ID.toString();
+    });
+    const parsedIx = transferIx as web3.ParsedInstruction;
+    const amount = parseFloat(parsedIx.parsed.info.tokenAmount.amount);
+
     const accountKeys = tx.transaction.message.accountKeys;
-    campaignKey = accountKeys[accountKeys.length - 1].pubkey;
+    const campaign = await findCampaign(accountKeys);
+    if (!campaign) {
+      console.log(`cannot find campaign account. tx=${txId}`);
+      return null;
+    }
+    return { txId, buyer, campaign, amount };
   } catch (err) {
-    console.log(`invalid tx object: ${JSON.stringify(tx)}`);
+    console.log(`error parsing transaction: ${err}. tx=${JSON.stringify(tx)}`);
     return null;
   }
+}
 
-  try {
-    const campaign = await getCampaign(campaignKey);
-    return { txId, buyer, campaign };
-  } catch (err) {
-    console.warn(`Cannot parse account ${campaignKey} into Campaign Object. txId=${txId}`);
+async function findCampaign(accountKeys: web3.ParsedMessageAccount[]): Promise<Campaign | null> {
+  accountKeys.reverse();
+  for (const account of accountKeys) {
+    if (!validCampaignAccount(account)) {
+      continue;
+    }
+    try {
+      const campaign = await getCampaign(account.pubkey);
+      return campaign;
+    } catch {
+    }
   }
   return null;
 }
 
+function validCampaignAccount(account: web3.ParsedMessageAccount): boolean {
+  if (account.signer || account.writable) {
+    return false;
+  }
+  const otherAccounts = new Set([TOKEN_PROGRAM_ID.toString(), PHORIA_KEY]);
+  if (otherAccounts.has(account.pubkey.toString())) {
+    return false;
+  }
+  return true;
+}
+
 async function crankCampaign(input: crankCampaignInput) {
-  const amount = new BN(100);
+  console.log(`Cranking ${JSON.stringify(input)}`);
+  const amount = new BN(input.amount);
   const purchase = { amount };
   const { mint, token } = input.campaign.vaults[0];
   const vaultToken = token;
