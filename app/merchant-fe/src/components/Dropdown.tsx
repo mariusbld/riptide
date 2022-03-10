@@ -3,6 +3,7 @@ import React, { Fragment, FC, ReactNode } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon, ExternalLinkIcon } from "@heroicons/react/solid";
 import { Link } from "react-router-dom";
+import SelectedArrow from "./svg/SelectedArrow";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -12,9 +13,15 @@ interface itemProps {
   children?: ReactNode;
   href?: string;
   onClick?: () => void;
+  isSelected?: boolean;
 }
 
-export const DropdownItem: FC<itemProps> = ({ children, href, onClick }) => {
+export const DropdownItem: FC<itemProps> = ({
+  children,
+  href,
+  onClick,
+  isSelected,
+}) => {
   return (
     <Menu.Item>
       {({ active }) => (
@@ -24,10 +31,14 @@ export const DropdownItem: FC<itemProps> = ({ children, href, onClick }) => {
           target={href ? "_blank" : undefined}
           className={classNames(
             active ? "bg-gray-100 text-gray-900" : "text-gray-700",
+            isSelected ? "font-semibold" : "",
             "block px-4 py-2 text-sm"
           )}
         >
-          {children}
+          <span>
+            {isSelected && <SelectedArrow />}
+            {children}
+          </span>
         </a>
       )}
     </Menu.Item>
