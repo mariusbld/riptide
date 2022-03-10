@@ -5,7 +5,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { clearIntervalAsync, setIntervalAsync, SetIntervalAsyncTimer } from 'set-interval-async/dynamic';
 import idl from "./riptide.json";
 import base58 from 'bs58';
-import 'dotenv/config'
+import 'dotenv/config';
 import { createClient, RedisClientType } from 'redis';
 
 type rpcEndpointName = "local" | "devnet" | "testnet" | "mainnet-beta" | "genesys";

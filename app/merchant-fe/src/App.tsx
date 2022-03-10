@@ -15,11 +15,13 @@ import { Link } from "react-router-dom";
 import Dropdown, { DropdownItem } from "./components/Dropdown";
 import PhoriaLogo from "./components/svg/PhoriaLogo";
 import ToggleButton from "./components/ToggleButton";
+import { AuthProvider } from "./contexts/AuthProvider";
 import { ConfigProvider } from "./contexts/ConfigProvider";
 import { ConnectionProvider } from "./contexts/ConnectionProvider";
 import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
+import { useAuth } from "./hooks/useAuth";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
 import { useProgram } from "./hooks/useProgram";
@@ -56,19 +58,21 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   return (
-    <DarkModeProvider>
-      <EndpointProvider>
-        <ConfigProvider>
-          <ConnectionProvider>
-            <WalletProvider wallets={wallets} autoConnect>
-              <WalletModalProvider>
-                <ProgramProvider>{children}</ProgramProvider>
-              </WalletModalProvider>
-            </WalletProvider>
-          </ConnectionProvider>
-        </ConfigProvider>
-      </EndpointProvider>
-    </DarkModeProvider>
+    <AuthProvider>
+      <DarkModeProvider>
+        <EndpointProvider>
+          <ConfigProvider>
+            <ConnectionProvider>
+              <WalletProvider wallets={wallets} autoConnect>
+                <WalletModalProvider>
+                  <ProgramProvider>{children}</ProgramProvider>
+                </WalletModalProvider>
+              </WalletProvider>
+            </ConnectionProvider>
+          </ConfigProvider>
+        </EndpointProvider>
+      </DarkModeProvider>
+    </AuthProvider>
   );
 };
 
@@ -78,10 +82,17 @@ const Navbar: FC = () => {
   const program = useProgram();
   const [posUrl, setPosUrl] = useState<string>();
   const { endpoint, setEndpoint } = useEndpoint();
+  const { user } = useAuth();
 
   useEffect(() => {
     (async () => {
-      if (!wallet || !wallet.connected || !wallet.publicKey || !program) {
+      if (
+        !wallet ||
+        !wallet.connected ||
+        !wallet.publicKey ||
+        !program ||
+        !user
+      ) {
         setPosUrl(undefined);
         return;
       }
@@ -90,7 +101,7 @@ const Navbar: FC = () => {
       const url = getPosUrl(wallet.publicKey, activeCampaignKeys);
       setPosUrl(url);
     })();
-  }, [wallet, wallet.connected, program]);
+  }, [wallet, wallet.connected, program, user]);
 
   const copyPosUrl = () => {
     posUrl && navigator.clipboard.writeText(posUrl);
@@ -122,6 +133,7 @@ const Navbar: FC = () => {
         <Dropdown transparent label={capitalize(endpoint)}>
           {EndpointOptions.map((option) => (
             <DropdownItem
+              key={option}
               onClick={() => setEndpoint(option)}
               isSelected={option === endpoint}
             >
