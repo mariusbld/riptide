@@ -6,6 +6,7 @@ import { clearIntervalAsync, setIntervalAsync, SetIntervalAsyncTimer } from 'set
 import idl from "./riptide.json";
 import base58 from 'bs58';
 import 'dotenv/config'
+import { createClient, RedisClientType } from 'redis';
 
 type rpcEndpointName = "local" | "devnet" | "testnet" | "mainnet-beta" | "genesys";
 const rpcEndpointUrls: Map<rpcEndpointName, string> = new Map([
@@ -30,10 +31,13 @@ let phoriaPublicKey = new web3.PublicKey(PHORIA_KEY);
 let wallet: Wallet;
 let timer: SetIntervalAsyncTimer;
 let connection: web3.Connection;
-let lastTxSignatureFetched: web3.TransactionSignature;
 let program: Program;
 let pda: web3.PublicKey;
 let bump: number;
+
+const LAST_SIG_PROCESSED = "last_sig_processed";
+const CRANK_ERR_LOG = "crank_err_log";
+let redisClient: RedisClientType;
 // TODO: move to Redis
 const campaignCache = new Map<web3.PublicKey, Campaign>();
 
@@ -44,6 +48,10 @@ interface crankCampaignInput {
   campaign: Campaign;
 }
 
+interface crankCampaignErr extends crankCampaignInput {
+  err: string;
+}
+
 const app = express();
 start();
 
@@ -52,7 +60,7 @@ app.listen(PORT, () => {
 });
 
 // TODO: limit max reach to 1 hour
-async function fetchLatestTxSignatures(): Promise<web3.TransactionSignature[]> {
+async function fetchLatestTxSignatures(lastTxSignatureProcessed: string): Promise<web3.TransactionSignature[]> {
   let txSignatures: string[] = [];
   let hasMore = true;
   let lastFetched: string;
@@ -60,18 +68,14 @@ async function fetchLatestTxSignatures(): Promise<web3.TransactionSignature[]> {
   while (hasMore) {
     const opt: web3.SignaturesForAddressOptions = { 
       before: lastFetched, 
-      until: lastTxSignatureFetched,
+      until: lastTxSignatureProcessed,
       limit: FETCH_LIMIT
     };
     const sigInfoObjs = await connection
       .getSignaturesForAddress(phoriaPublicKey, opt, 'confirmed');
     hasMore = sigInfoObjs.length === FETCH_LIMIT;
-    const txSignatureBatch = sigInfoObjs.map(o => o.signature);
-    // txSignatures = txSignatures.concat(txSignatureBatch || []);
-    // TODO: switch to the above.
-    if (txSignatureBatch.length > 0) {
-      txSignatures.push(txSignatureBatch[0]);
-    }
+    const txSignatureBatch = sigInfoObjs.map(o => o.signature) ?? [];
+    txSignatures = txSignatures.concat(txSignatureBatch);
   }
   txSignatures.reverse();
   return txSignatures;
@@ -79,21 +83,18 @@ async function fetchLatestTxSignatures(): Promise<web3.TransactionSignature[]> {
 
 async function run() {
   try {
-    const txSignatures = await fetchLatestTxSignatures();
-    if (!txSignatures.length) {
+    const lastTxSignatureProcessed = await redisClient.get(LAST_SIG_PROCESSED);
+    console.log(`Last signature processed: ${lastTxSignatureProcessed}`);
+    const txSignatures = await fetchLatestTxSignatures(lastTxSignatureProcessed);
+    if (txSignatures.length === 0) {
       console.log(`No more transactions to process!`);
       return;
     }
-    if (txSignatures.length) { 
-      lastTxSignatureFetched = txSignatures[0];
-    } else {
-      console.log(`No more transactions to process!`);
-      return;
-    }
-    // TODO: batch fetch
+    // TODO: fetch in smaller batches
     const txs = await connection.getParsedTransactions(txSignatures);
     const inputs = await parseTransactions(txs);
     await crankCampaigns(inputs);
+    await redisClient.set(LAST_SIG_PROCESSED, txSignatures[txSignatures.length - 1]);
   } catch (err) {
     console.error(err);
   }
@@ -111,6 +112,9 @@ async function start() {
   program = new Program(idl as Idl, PROGRAM_ID, provider);
   [pda, bump] = await web3.PublicKey.findProgramAddress(
     [Buffer.from(CAMPAIGN_PDA_SEED)], program.programId);
+  console.log("Connecting to Redis..");
+  redisClient = createClient();
+  await redisClient.connect();
   timer = setIntervalAsync(run, RUN_INTERVAL_MS);
 }
 
@@ -120,7 +124,25 @@ async function stop() {
 
 async function crankCampaigns(inputs: crankCampaignInput[]) {
   for (const input of inputs) {
-    await crankCampaign(input);
+    try {
+      await crankCampaign(input);
+    } 
+    catch (err) {
+      console.error(`Failed to crank ${input}: ${err}`);
+      reportCrankError(input, err.toString());
+    }
+  }
+}
+
+async function reportCrankError(input: crankCampaignInput, crankErr: string) {
+  try {
+    const reportErr: crankCampaignErr = {
+      ...input,
+      err: crankErr,
+    }
+    await redisClient.lPush(CRANK_ERR_LOG, JSON.stringify(reportErr));
+  } catch (err) {
+    console.log(`Error reporting crank error: ${err}`);
   }
 }
 
