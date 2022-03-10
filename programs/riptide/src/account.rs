@@ -122,10 +122,10 @@ pub enum CampaignState {
 #[account]
 pub struct Campaign {
     pub owner: Pubkey,
-    pub vaults: Vec<Vault>,
     pub state: CampaignState,
     pub config: CampaignConfig,
     pub stats: CampaignStats,
+    pub vaults: Vec<Vault>,
 }
 
 impl Campaign {
