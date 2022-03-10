@@ -161,7 +161,8 @@ describe('riptide', () => {
     
     const epochInfo = await program.provider.connection.getEpochInfo();
     const slot = new anchor.BN(epochInfo.absoluteSlot);
-    const purchase = { amount, slot };
+    const hash = new anchor.BN(1234);
+    const purchase = { amount, slot, hash };
 
     for (let i = 0; i < NUM_PURCHASES; i++) {
       await program.rpc.crankCampaign(bump, purchase, {
