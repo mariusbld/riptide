@@ -24,6 +24,7 @@ pub enum RiptideError {
     InternalErrorProbArray,
     InternalErrorRandom,
     NotImplemented,
+    PurchaseTooOld,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Default, Clone, Debug)]
@@ -101,7 +102,8 @@ impl CampaignStats {
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Purchase {
-    amount: u64,
+    pub amount: u64,
+    pub slot: u64,
 }
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]

@@ -8,6 +8,7 @@ mod account;
 mod context;
 
 const SLOT_HASHES: &str = "SysvarS1otHashes111111111111111111111111111";
+const CRANK_MAX_LAG_SLOTS: u64 = 1000; // ~10 minutes
 
 declare_id!("2u551QiRFv6YjTFVCN3sjMBnaPKXqxKLmJKyiV69SKau");
 
@@ -61,6 +62,11 @@ pub mod riptide {
         bump: u8,
         purchase: Purchase,
     ) -> ProgramResult {
+        let clock = Clock::get()?;
+        require!(
+            clock.slot - purchase.slot <= CRANK_MAX_LAG_SLOTS,
+            RiptideError::PurchaseTooOld
+        );
         let slot_hashes = &ctx.accounts.slot_hashes;
         require!(
             slot_hashes.key().to_string() == SLOT_HASHES,
