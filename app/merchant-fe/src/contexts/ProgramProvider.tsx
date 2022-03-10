@@ -3,7 +3,7 @@ import { Idl, Program } from "@project-serum/anchor";
 import {
   getAccount,
   getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   Connection,
@@ -11,7 +11,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
-  SYSVAR_SLOT_HASHES_PUBKEY
+  SYSVAR_SLOT_HASHES_PUBKEY,
 } from "@solana/web3.js";
 import React, { FC, ReactNode, useMemo } from "react";
 import { useConfig } from "../hooks/useConfig";
@@ -26,7 +26,7 @@ import {
   ProgramContextState,
   Vault,
   VaultWithFunds,
-  Winner
+  Winner,
 } from "../hooks/useProgram";
 import { useProvider } from "../hooks/useProvider";
 import idl from "../riptide.json";
