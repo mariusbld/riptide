@@ -92,6 +92,7 @@ async function run() {
       console.log(`No more transactions to process!`);
       return;
     }
+    console.log(`Found ${txSignatures.length} new signatures!`)
     // TODO: fetch in smaller batches
     const txs = await connection.getParsedTransactions(txSignatures);
     const inputs = await parseTransactions(txs);
@@ -225,7 +226,7 @@ async function crankCampaign(input: crankCampaignInput) {
   console.log(`Cranking ${JSON.stringify(input)}`);
   const amount = new BN(input.amount);
   const slot = new BN(input.slot);
-  const hash = getTxHashUint32(input.txId);
+  const hash = new BN(getTxHashUint32(input.txId));
   const purchase = { amount, slot, hash };
   const { mint, token } = input.campaign.vaults[0];
   const vaultToken = token;
