@@ -10,7 +10,7 @@ mod context;
 const SLOT_HASHES: &str = "SysvarS1otHashes111111111111111111111111111";
 const CRANK_MAX_LAG_SLOTS: u64 = 1000; // ~10 minutes
 
-declare_id!("2u551QiRFv6YjTFVCN3sjMBnaPKXqxKLmJKyiV69SKau");
+declare_id!("6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J");
 
 #[program]
 pub mod riptide {
