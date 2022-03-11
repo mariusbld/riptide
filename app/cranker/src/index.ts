@@ -26,6 +26,7 @@ const RPC_ENDPOINT_URL = process.env.RPC_ENDPOINT_URL ?? rpcEndpointUrls.get(RPC
 const FETCH_LIMIT = 1000;
 const PROGRAM_ID = process.env.PROGRAM_ID;
 const CAMPAIGN_PDA_SEED = "campaign";
+const REDIS_URL = process.env.REDIS_URL ?? "redis://127.0.0.1:6739"
 
 let phoriaPublicKey = new web3.PublicKey(PHORIA_KEY);
 let wallet: Wallet;
@@ -113,8 +114,8 @@ async function start() {
   program = new Program(idl as Idl, PROGRAM_ID, provider);
   [pda, bump] = await web3.PublicKey.findProgramAddress(
     [Buffer.from(CAMPAIGN_PDA_SEED)], program.programId);
-  console.log("Connecting to Redis..");
-  redisClient = createClient();
+  console.log(`Connecting to Redis ${REDIS_URL}`);
+  redisClient = createClient({ url: REDIS_URL });
   await redisClient.connect();
   timer = setIntervalAsync(run, RUN_INTERVAL_MS);
 }
