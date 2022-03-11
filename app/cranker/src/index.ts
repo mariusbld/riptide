@@ -19,7 +19,7 @@ const rpcEndpointUrls: Map<rpcEndpointName, string> = new Map([
 
 const WALLET = process.env.WALLET;
 const PORT = process.env.PORT || 8080;
-const RUN_INTERVAL_MS = 5000;
+const RUN_INTERVAL_MS = parseInt(process.env.RUN_INTERVAL_MS) || 5000;
 const PHORIA_KEY = process.env.PHORIA_KEY;
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT as rpcEndpointName;
 const RPC_ENDPOINT_URL = process.env.RPC_ENDPOINT_URL ?? rpcEndpointUrls.get(RPC_ENDPOINT);
