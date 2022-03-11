@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import 'dotenv/config';
 
-const PORT = process.env.PORT ?? 8008
+const PORT = process.env.PORT ?? 80
 const ALLOWED_CODES = process.env.ALLOWED_CODES ?? "";
 const LOGIN_USER = process.env.LOGIN_USER;
 
