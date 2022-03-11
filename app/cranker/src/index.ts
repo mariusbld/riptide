@@ -6,7 +6,7 @@ import { clearIntervalAsync, setIntervalAsync, SetIntervalAsyncTimer } from 'set
 import idl from "./riptide.json";
 import base58 from 'bs58';
 import 'dotenv/config';
-import { createClient, RedisClientType } from 'redis';
+import { createClient, RedisClientType, RedisClientOptions } from 'redis';
 
 type rpcEndpointName = "local" | "devnet" | "testnet" | "mainnet-beta" | "genesys";
 const rpcEndpointUrls: Map<rpcEndpointName, string> = new Map([
@@ -115,7 +115,16 @@ async function start() {
   [pda, bump] = await web3.PublicKey.findProgramAddress(
     [Buffer.from(CAMPAIGN_PDA_SEED)], program.programId);
   console.log(`Connecting to Redis ${REDIS_URL}`);
-  redisClient = createClient({ url: REDIS_URL });
+  let redisOpt: RedisClientOptions = {
+    url: REDIS_URL
+  };
+  if (REDIS_URL.startsWith('rediss')) {
+    redisOpt.socket = {
+      tls: true,
+      rejectUnauthorized: false
+    }
+  }
+  redisClient = createClient(redisOpt);
   await redisClient.connect();
   timer = setIntervalAsync(run, RUN_INTERVAL_MS);
 }
