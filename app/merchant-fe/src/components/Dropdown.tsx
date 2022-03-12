@@ -61,7 +61,7 @@ const Dropdown: FC<props> = ({ disabled, label, transparent, children }) => {
       <div>
         <Menu.Button
           disabled={disabled}
-          className={`inline-flex justify-center w-full rounded-md px-4 py-2 text-md font-medium ${labelClassName} ${labelTextColor}`}
+          className={`inline-flex justify-center w-full rounded-md px-4 py-2 text-md font-medium whitespace-nowrap ${labelClassName} ${labelTextColor}`}
         >
           {label ?? "Options"}
           <ChevronDownIcon className="-mr-1 ml-2 h-6 w-6" aria-hidden="true" />
