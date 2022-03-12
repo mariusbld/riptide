@@ -120,7 +120,7 @@ const PrizeTable: FC<{
     <div>
       {prizeData.entries.sort(sortByAmountDesc).map((prize, idx) => (
         <div
-          className="grid grid-cols-9 text-center hover:bg-white/10 group rounded-full whitespace-nowrap"
+          className="grid grid-cols-9 text-center hover:bg-black/10 dark:hover:bg-white/10 group rounded-full whitespace-nowrap"
           key={idx}
         >
           <div className="py-2">{prize.count}</div>

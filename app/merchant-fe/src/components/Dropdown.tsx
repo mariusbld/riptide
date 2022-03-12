@@ -1,8 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
-import React, { Fragment, FC, ReactNode } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { ChevronDownIcon, ExternalLinkIcon } from "@heroicons/react/solid";
-import { Link } from "react-router-dom";
+import { ChevronDownIcon } from "@heroicons/react/solid";
+import React, { FC, Fragment, ReactNode } from "react";
 import SelectedArrow from "./svg/SelectedArrow";
 
 function classNames(...classes: string[]) {
@@ -56,12 +55,13 @@ const Dropdown: FC<props> = ({ disabled, label, transparent, children }) => {
   const labelClassName = transparent
     ? "bg-transparent"
     : "border border-gray-300 shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500";
+  const labelTextColor = disabled ? "text-zinc-400 dark:text-zinc-600" : "";
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
         <Menu.Button
           disabled={disabled}
-          className={`inline-flex justify-center w-full rounded-md px-4 py-2 text-md font-medium ${labelClassName}`}
+          className={`inline-flex justify-center w-full rounded-md px-4 py-2 text-md font-medium whitespace-nowrap ${labelClassName} ${labelTextColor}`}
         >
           {label ?? "Options"}
           <ChevronDownIcon className="-mr-1 ml-2 h-6 w-6" aria-hidden="true" />

@@ -62,13 +62,13 @@ const ConfirmModal: FC<props> = ({
             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
-            <div className="relative inline-block align-bottom dark:bg-modal-bg-dark rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="dark:bg-modal-bg-dark px-4 pt-5 pb-4 sm:p-10 sm:pb-6">
+            <div className="relative inline-block align-bottom bg-modal-bg-light dark:bg-modal-bg-dark rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="px-4 pt-5 pb-4 sm:p-10 sm:pb-6">
                 <div className="sm:flex sm:items-start flex-col">
                   {icon === ModalIcon.Check && (
                     <div className="mx-auto flex-shrink-0 flex items-center justify-center h-14 w-14 rounded-full bg-green-500 sm:mx-0 sm:h-12 sm:w-12">
                       <CheckIcon
-                        className="h-7 w-7 dark:text-modal-bg-dark"
+                        className="h-7 w-7 text-modal-bg-light dark:text-modal-bg-dark"
                         aria-hidden="true"
                       />
                     </div>
@@ -76,7 +76,7 @@ const ConfirmModal: FC<props> = ({
                   <div className="mt-3 text-center sm:mt-4 sm:ml-0 sm:text-left">
                     <Dialog.Title
                       as="h2"
-                      className="text-2xl leading-6 font-medium dark:text-modal-dark"
+                      className="text-2xl leading-6 font-medium text-modal-light dark:text-modal-dark"
                     >
                       {title}
                     </Dialog.Title>

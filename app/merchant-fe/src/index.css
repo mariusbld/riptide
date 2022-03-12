@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply bg-zinc-100 dark:bg-zinc-800 text-primary-light dark:text-primary-dark; 
+  @apply bg-zinc-50 dark:bg-zinc-800 text-primary-light dark:text-primary-dark; 
   font-family: "Helvetica Neue", Helvetica, Tahoma, Arial, Roboto, sans-serif;
   transition: all 0.50s linear;
 }

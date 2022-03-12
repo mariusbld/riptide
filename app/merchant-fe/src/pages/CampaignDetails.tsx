@@ -211,7 +211,7 @@ const ActiveCampaign: FC<{
       name: "start",
       modalTitle: "Campaign Started!",
       modalContent:
-        "Your campaign was successfully started! New purchases are eligible for campaign prizes.",
+        "Your campaign was successfully started! Open a new Point of Sale terminal to start accepting payments.",
       handle: () => program.startCampaign(campaign.id),
     }),
     [campaign.id]
