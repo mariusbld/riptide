@@ -14,6 +14,7 @@ import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Dropdown, { DropdownItem } from "./components/Dropdown";
 import PhoriaLogo from "./components/svg/PhoriaLogo";
+import { SolanaPayLogo } from "./components/svg/SolanaPayLogo";
 import ToggleButton from "./components/ToggleButton";
 import { AuthProvider } from "./contexts/AuthProvider";
 import { ConfigProvider } from "./contexts/ConfigProvider";
@@ -142,7 +143,7 @@ const Navbar: FC = () => {
           ))}
         </Dropdown>
         <div className="ml-8">
-          <WalletMultiButton className="text-primary-light dark:text-primary-dark font-mono dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />
+          <WalletMultiButton className="text-primary-light  dark:text-primary-dark hover:text-white dark:hover:text-primary-dark font-mono bg-zinc-400  dark:bg-zinc-600 dark:hover:bg-zinc-500 rounded-full" />
         </div>
       </div>
     </div>
@@ -156,7 +157,8 @@ const Footer: FC = () => {
   ).toString();
   return (
     <div className="absolute bottom-0 flex justify-center items-center py-8 w-full">
-      <img width={165} src={logo} />
+      <span className="px-2">Powered by</span>
+      <SolanaPayLogo />
     </div>
   );
 };

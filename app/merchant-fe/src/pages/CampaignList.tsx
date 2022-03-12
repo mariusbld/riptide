@@ -1,4 +1,3 @@
-import { ChevronRightIcon } from "@heroicons/react/outline";
 import React, { FC, useEffect, useMemo, useState } from "react";
 import CircleDecoration from "../components/CircleDecoration";
 import Hr from "../components/Hr";
@@ -73,11 +72,7 @@ const CampaignList: FC = () => {
 
   return (
     <div>
-      <NavLink pathname="/campaigns/create">
-        <div className="flex flex-row items-center">
-          New Campaign <ChevronRightIcon className="ml-1 h-4 w-4" />
-        </div>
-      </NavLink>
+      <NavLink pathname="/campaigns/create">New Campaign{" >"}</NavLink>
       <div className="pb-12">
         <SectionHeading>
           <div className="flex flex-row items-baseline">

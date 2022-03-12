@@ -20,15 +20,15 @@ const Button: FC<props> = ({
 }) => {
   let className = small ? "py-2 px-4" : "py-3 px-6";
   className += disabled
-    ? " dark:bg-input-bg-dark"
+    ? " bg-input-bg-light dark:bg-input-bg-dark"
     : destructive
-    ? " dark:bg-btn-destr-bg-dark"
-    : " dark:bg-btn-bg-dark";
+    ? " bg-btn-destr-bg-light dark:bg-btn-destr-bg-dark"
+    : " bg-btn-bg-light dark:bg-btn-bg-dark";
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`dark:text-btn-dark dark:hover:text-btn-hv-dark rounded-full whitespace-nowrap ${className}`}
+      className={` text-btn-light hover:text-btn-hv-light dark:text-btn-dark dark:hover:text-btn-hv-dark rounded-full whitespace-nowrap ${className}`}
     >
       {children}
       {loading && <Spinner />}
