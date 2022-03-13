@@ -12,7 +12,7 @@ const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
   const { usdcMint } = useConfig();
   return (
     <div className="grid grid-cols-3">
-      <NavLink pathname={`/campaigns/${campaign.id.toString()}`}>
+      <NavLink pathname={`/campaigns/${campaign.id.toString()}/details`}>
         <div className="underline">{toDisplayString(campaign.id)}</div>
       </NavLink>
       <div className="text-right">
@@ -22,7 +22,9 @@ const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
         )}{" "}
         USDC
       </div>
-      <div className="text-right">{new Date().toDateString()}</div>
+      <div className="text-right">
+        {campaign.stats.createdTime?.toDateString()}
+      </div>
     </div>
   );
 };
@@ -45,7 +47,9 @@ const sortCampaignsCmp = (a: Campaign, b: Campaign) => {
   if (a.state !== b.state) {
     return a.state - b.state;
   }
-  return a.stats.createdTime.getTime() - b.stats.createdTime.getTime();
+  const leftCreated = a.stats.createdTime?.getTime() ?? 0;
+  const rightCreated = b.stats.createdTime?.getTime() ?? 0;
+  return leftCreated - rightCreated;
 };
 
 const CampaignList: FC = () => {

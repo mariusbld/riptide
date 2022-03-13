@@ -234,6 +234,7 @@ const CreateCampaign: FC = () => {
         onConfirm={handleGoToDetails}
         icon={ModalIcon.Check}
         confirmText="Campaign Details"
+        title="Campaign Created!"
       >
         <p className="text-sm text-gray-500">
           Your campaign was successfully created! You can now navigate to the

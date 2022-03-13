@@ -1,4 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
+import { capitalize } from "../utils/format";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Button from "../components/Button";
@@ -11,6 +12,7 @@ import NavLink from "../components/NavLink";
 import SectionHeading from "../components/SectionHeading";
 import { useConfig } from "../hooks/useConfig";
 import {
+  Campaign,
   CampaignState,
   CampaignWithFunds,
   useProgram,
@@ -190,11 +192,6 @@ const ActiveCampaign: FC<{
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
 
-  const [winners, setWinners] = useState<Winner[]>([]);
-  useEffect(() => {
-    (async () => setWinners(await program.listCampaignWinners(campaign.id)))();
-  }, [campaign, program]);
-
   const stopAction: actionType = useMemo(
     () => ({
       name: "stop",
@@ -282,18 +279,6 @@ const ActiveCampaign: FC<{
       <Hr />
       <CampaignStatsSection campaign={campaign} />
       <Hr />
-      {winners.length > 0 && (
-        <>
-          <div className="font-bold pb-1">Winners</div>
-          {winners.map((w, idx) => (
-            <div key={idx}>
-              <span>{w.date.toDateString()} - </span>
-              <span>{w.wallet.toString()}</span>
-            </div>
-          ))}
-          <Hr />
-        </>
-      )}
       <div className="md:flex items-center justify-end">
         {campaignIsStopped && (
           <>
@@ -332,8 +317,75 @@ const PastCampaign: FC<{
   );
 };
 
+const CampaignWinnersPage: FC<{ campaign: Campaign }> = ({ campaign }) => {
+  const program = useProgram();
+  const [winners, setWinners] = useState<Winner[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const localWinners = await program.listCampaignWinners(campaign.id);
+        setWinners(localWinners);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [campaign, program]);
+
+  if (loading) {
+    return <div>Loading..</div>;
+  }
+
+  return (
+    <table>
+      <tbody>
+        {loading && <div>Loading..</div>}
+        {!loading &&
+          winners.map((w) => (
+            <tr>
+              <td>{w.date.toDateString()}</td>
+              <td className="px-4">
+                {w.amount.toFixed(2)}
+                {" USDC"}
+              </td>
+              <td>{w.wallet.toString()}</td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  );
+};
+
+type Subpage = "details" | "winners";
+
+const SubpageMenu: FC<{
+  subpages: Subpage[];
+  selectedSubpage: Subpage;
+  basePath: string;
+}> = ({ subpages, selectedSubpage, basePath }) => {
+  return (
+    <div className="pt-4">
+      {subpages.map((p: Subpage, idx: number) => (
+        <span key={p}>
+          {idx !== 0 && <span>{" | "}</span>}
+          <NavLink pathname={`${basePath}/${p}`}>
+            <span className={p === selectedSubpage ? "font-bold" : ""}>
+              {capitalize(p)}
+            </span>
+          </NavLink>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const CampaignDetails: FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, page } = useParams<{ id: string; page: string }>();
+  const subpage = (page as Subpage) ?? "details";
   const [campaign, setCampaign] = useState<Nullable<CampaignWithFunds>>(null);
   const [loading, setLoading] = useState(true);
   const program = useProgram();
@@ -363,22 +415,38 @@ const CampaignDetails: FC = () => {
   const isStopped = campaign && campaign.state == CampaignState.Stopped;
   const isRevoked = campaign && campaign.state == CampaignState.Revoked;
 
+  const subpages: Subpage[] = ["details", "winners"];
+
   return (
     <div>
       <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
       <SectionHeading>
-        Campaign Details -{" "}
+        Campaign -{" "}
         <span className="dark:text-secondary-dark underline">
           [{toDisplayString(campaignId)}]
         </span>
       </SectionHeading>
+      {!isDraft && (
+        <SubpageMenu
+          selectedSubpage={subpage}
+          subpages={subpages}
+          basePath={`/campaigns/${campaignId.toString()}`}
+        />
+      )}
       <Hr />
-      {loading && <div>Loading</div>}
-      {isDraft && <DraftCampaign refresh={refresh} campaign={campaign} />}
-      {(isStarted || isStopped) && (
+      {loading && <div>Loading..</div>}
+      {!loading && campaign && subpage === "winners" && (
+        <CampaignWinnersPage campaign={campaign} />
+      )}
+      {subpage === "details" && isDraft && (
+        <DraftCampaign refresh={refresh} campaign={campaign} />
+      )}
+      {subpage === "details" && (isStarted || isStopped) && (
         <ActiveCampaign refresh={refresh} campaign={campaign} />
       )}
-      {isRevoked && <PastCampaign refresh={refresh} campaign={campaign} />}
+      {subpage === "details" && isRevoked && (
+        <PastCampaign refresh={refresh} campaign={campaign} />
+      )}
     </div>
   );
 };

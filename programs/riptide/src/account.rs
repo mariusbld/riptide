@@ -76,10 +76,11 @@ pub struct CampaignStats {
 }
 
 impl CampaignStats {
-    pub fn init(&mut self, pirze_entry_size: usize) {
+    pub fn init(&mut self, pirze_entry_size: usize, ts_now: i64) {
         self.prize_stats = vec![PrizeStats { awarded_count: 0 }; pirze_entry_size];
         self.running_sales_amount = 0;
         self.running_sales_count = 0;
+        self.created_ts = ts_now;
     }
     pub fn add_purchase(&mut self, purchase: Purchase) {
         self.running_sales_count += 1;
@@ -99,6 +100,12 @@ impl CampaignStats {
     }
     pub fn get_awarded_prize_count(&self, prize_idx: usize) -> u64 {
         return self.prize_stats[prize_idx].awarded_count;
+    }
+    pub fn set_started(&mut self, ts_now: i64) {
+        self.start_ts = ts_now;
+    }
+    pub fn set_stopped(&mut self, ts_now: i64) {
+        self.stop_ts = ts_now;
     }
 }
 
@@ -200,9 +207,11 @@ impl Campaign {
             Campaign::validate_config(&config),
             ProgramError::InvalidArgument
         );
+        let clock = Clock::get()?;
         self.owner = owner;
         self.config = config.clone();
-        self.stats.init(config.prize_data.entries.len());
+        self.stats
+            .init(config.prize_data.entries.len(), clock.unix_timestamp);
         self.state = CampaignState::Initialized;
         self.visited = VisitedQueue {
             next: 0,
@@ -213,13 +222,17 @@ impl Campaign {
         Ok(())
     }
     pub fn start(&mut self) -> ProgramResult {
+        let clock = Clock::get()?;
         require!(self.can_start(), RiptideError::InvalidState);
         self.state = CampaignState::Started;
+        self.stats.set_started(clock.unix_timestamp);
         Ok(())
     }
     pub fn stop(&mut self) -> ProgramResult {
+        let clock = Clock::get()?;
         require!(self.can_stop(), RiptideError::InvalidState);
         self.state = CampaignState::Stopped;
+        self.stats.set_stopped(clock.unix_timestamp);
         Ok(())
     }
     pub fn revoke(&mut self) -> ProgramResult {
