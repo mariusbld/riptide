@@ -39,7 +39,7 @@ const CampaignStatsSection: FC<{ campaign: CampaignWithFunds }> = ({
           </div>
         </div>
         <div className="flex flex-row items-start py-2">
-          <div className="w-48 font-bold">Number of Prizes Awarded:</div>
+          <div className="w-48 font-bold"># of Prizes Awarded:</div>
           <div className="w-40">{awardedPrizeCount}</div>
         </div>
       </div>

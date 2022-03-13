@@ -47,7 +47,7 @@ const Home: FC = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/campaigns/create" element={<CreateCampaign />} />
-        <Route path="/campaigns/:id" element={<CampaignDetails />} />
+        <Route path="/campaigns/:id/:page" element={<CampaignDetails />} />
         <Route path="/campaigns" element={<CampaignList />} />
         <Route path="/" element={<Navigate to="/campaigns" />} />
       </Route>

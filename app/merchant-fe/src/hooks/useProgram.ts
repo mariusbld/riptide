@@ -28,9 +28,9 @@ export interface CampaignStats {
   prizeStats: PrizeStats[];
   runningSalesAmount: number;
   runningSalesCount: number;
-  createdTime: Date;
-  startTime: Date;
-  endTime: Date;
+  createdTime?: Date;
+  startTime?: Date;
+  stopTime?: Date;
 }
 
 export interface Vault {
@@ -70,6 +70,7 @@ export type CampaignWithFunds = Campaign & CampaignFunds;
 export interface Winner {
   wallet: PublicKey;
   date: Date;
+  amount: number;
 }
 
 export interface ProgramContextState {

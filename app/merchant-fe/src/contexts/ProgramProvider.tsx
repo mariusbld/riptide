@@ -288,11 +288,35 @@ class Client implements ProgramContextState {
       (tx) => tx.meta?.innerInstructions?.length
     );
     const winners = winnerTxs
-      .map((tx) => ({
-        wallet: tx.transaction.message.accountKeys.find((a) => a.signer)
-          ?.pubkey,
-        date: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(),
-      }))
+      .map((tx) => {
+        // const cranker = tx.transaction.message.accountKeys.find((k) => k.signer)?.pubkey;
+        const allAccounts = new Set(
+          tx.transaction.message.accountKeys.map((a) => a.pubkey.toString())
+        );
+        // buyer is the token balance account owner which is not included in the account list.
+        const buyer = tx.meta?.preTokenBalances?.find(
+          (b) => b.owner && !allAccounts.has(b.owner)
+        )?.owner;
+        const preTokenAccount = tx.meta?.preTokenBalances?.find(
+          (e) => e.owner?.toString() === buyer
+        );
+        const postTokenAccount = tx.meta?.postTokenBalances?.find(
+          (e) => e.owner?.toString() === buyer
+        );
+        let amount = 0;
+        if (preTokenAccount && postTokenAccount) {
+          const preBalance = preTokenAccount.uiTokenAmount.uiAmount;
+          const postBalance = postTokenAccount.uiTokenAmount.uiAmount;
+          if (preBalance !== null && postBalance !== null) {
+            amount = postBalance - preBalance;
+          }
+        }
+        return {
+          wallet: new PublicKey(buyer!),
+          amount,
+          date: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(),
+        };
+      })
       .filter((w) => w.wallet) as Winner[];
 
     return winners;
@@ -320,9 +344,15 @@ class Client implements ProgramContextState {
         })),
         runningSalesAmount: a.stats.runningSalesAmount.toNumber(),
         runningSalesCount: a.stats.runningSalesCount.toNumber(),
-        createdTime: new Date(),
-        startTime: new Date(),
-        endTime: new Date(),
+        createdTime: a.stats.createdTs.toNumber()
+          ? new Date(a.stats.createdTs.toNumber() * 1000)
+          : undefined,
+        startTime: !!a.stats.startTs
+          ? new Date(a.stats.startTs.toNumber() * 1000)
+          : undefined,
+        stopTime: !!a.stats.stopTs
+          ? new Date(a.stats.stopTs.toNumber() * 1000)
+          : undefined,
       },
     };
   }
