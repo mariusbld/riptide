@@ -3,6 +3,7 @@ import { Campaign } from "./useProgram";
 
 export interface CampaignCacheState {
   activeCampaigns: Campaign[];
+  startedCampaigns: Campaign[];
 }
 
 export const CampaignCacheContext = createContext<CampaignCacheState>(

@@ -1,10 +1,18 @@
-import React, { FC, ReactNode, useCallback, useEffect, useState } from "react";
+import React, {
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 import { CampaignCacheContext } from "../hooks/useCampaignCache";
 import {
   useProgram,
   Campaign,
   CampaignEvent,
   CampaignEventType,
+  CampaignState,
 } from "../hooks/useProgram";
 
 interface props {
@@ -14,6 +22,10 @@ interface props {
 export const CampaignCacheProvider: FC<props> = ({ children }) => {
   const program = useProgram();
   const [activeCampaigns, setActiveCampaigns] = useState<Campaign[]>([]);
+  const startedCampaigns = useMemo(
+    () => activeCampaigns.filter((c) => c.state === CampaignState.Started),
+    [activeCampaigns]
+  );
 
   const reloadActiveCampaigns = useCallback(() => {
     (async () => {
@@ -49,7 +61,9 @@ export const CampaignCacheProvider: FC<props> = ({ children }) => {
   }, [program]);
 
   return (
-    <CampaignCacheContext.Provider value={{ activeCampaigns }}>
+    <CampaignCacheContext.Provider
+      value={{ activeCampaigns, startedCampaigns }}
+    >
       {children}
     </CampaignCacheContext.Provider>
   );

@@ -20,6 +20,7 @@ import {
 } from "../hooks/useProgram";
 import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
 import { toCurrencyString, toDisplayString } from "../utils/format";
+import { useCampaignCache } from "../hooks/useCampaignCache";
 
 const AddFunds: FC<{
   campaign: CampaignWithFunds;
@@ -110,16 +111,24 @@ const WithdrawFunds: FC<{
 const DraftCampaign: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
-}> = ({ campaign, refresh }) => {
+  openErrorModal: (text: string) => void;
+}> = ({ campaign, refresh, openErrorModal }) => {
   const program = useProgram();
   const [isStarting, setIsStarting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const { startedCampaigns } = useCampaignCache();
 
   const canStart = useMemo(() => {
     return getMissingPrizeFunds(campaign) === 0;
   }, [campaign]);
 
   const handleStart = async () => {
+    if (startedCampaigns.length > 0) {
+      openErrorModal(
+        "You can only have 1 started campaign! Please stop other campaigns and try again."
+      );
+      return;
+    }
     setIsStarting(true);
     try {
       await program.startCampaign(campaign.id);
@@ -168,7 +177,8 @@ const DraftCampaign: FC<{
 const ActiveCampaign: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
-}> = ({ campaign, refresh }) => {
+  openErrorModal: (text: string) => void;
+}> = ({ campaign, refresh, openErrorModal }) => {
   type actionName = "stop" | "start" | "revoke";
   interface actionType {
     name: actionName;
@@ -192,12 +202,14 @@ const ActiveCampaign: FC<{
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState("");
 
+  const { startedCampaigns } = useCampaignCache();
+
   const stopAction: actionType = useMemo(
     () => ({
       name: "stop",
       modalTitle: "Campaign Stopped!",
       modalContent:
-        "Your campaign was successfully stopped! Any new purchases won't qualify for any of the campaign prizes.",
+        "Your campaign was successfully stopped! Any new purchases won't qualify for this campaign prizes.",
       handle: () => program.stopCampaign(campaign.id),
     }),
     [campaign.id]
@@ -209,9 +221,17 @@ const ActiveCampaign: FC<{
       modalTitle: "Campaign Started!",
       modalContent:
         "Your campaign was successfully started! Open a new Point of Sale terminal to start accepting payments.",
-      handle: () => program.startCampaign(campaign.id),
+      handle: async () => {
+        if (startedCampaigns.length > 0) {
+          openErrorModal(
+            "You can only have 1 started campaign! Please stop other campaigns and try again."
+          );
+          throw new Error("Unable to start campaign! Max limit reached.");
+        }
+        await program.startCampaign(campaign.id);
+      },
     }),
-    [campaign.id]
+    [campaign.id, startedCampaigns, openErrorModal]
   );
 
   const revokeAction: actionType = useMemo(
@@ -345,8 +365,8 @@ const CampaignWinnersPage: FC<{ campaign: Campaign }> = ({ campaign }) => {
       <tbody>
         {loading && <div>Loading..</div>}
         {!loading &&
-          winners.map((w) => (
-            <tr>
+          winners.map((w, idx) => (
+            <tr key={idx}>
               <td>{w.date.toDateString()}</td>
               <td className="px-4">
                 {w.amount.toFixed(2)}
@@ -388,6 +408,14 @@ const CampaignDetails: FC = () => {
   const subpage = (page as Subpage) ?? "details";
   const [campaign, setCampaign] = useState<Nullable<CampaignWithFunds>>(null);
   const [loading, setLoading] = useState(true);
+  const [errModalOpen, setErrModalOpen] = useState(false);
+  const [errModalText, setErrModalText] = useState<string>();
+
+  const openErrorModal = useCallback((text: string) => {
+    setErrModalText(text);
+    setErrModalOpen(true);
+  }, []);
+
   const program = useProgram();
   if (!id) {
     return <div>Invalid campaign</div>;
@@ -419,6 +447,14 @@ const CampaignDetails: FC = () => {
 
   return (
     <div>
+      <ConfirmModal
+        open={errModalOpen}
+        setOpen={setErrModalOpen}
+        onConfirm={() => setErrModalOpen(false)}
+        title={"Ooops!"}
+      >
+        <p className="text-sm dark:text-secondary-dark">{errModalText}</p>
+      </ConfirmModal>
       <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
       <SectionHeading>
         Campaign -{" "}
@@ -438,13 +474,21 @@ const CampaignDetails: FC = () => {
       {!loading && campaign && subpage === "winners" && (
         <CampaignWinnersPage campaign={campaign} />
       )}
-      {subpage === "details" && isDraft && (
-        <DraftCampaign refresh={refresh} campaign={campaign} />
+      {!loading && subpage === "details" && isDraft && (
+        <DraftCampaign
+          refresh={refresh}
+          campaign={campaign}
+          openErrorModal={openErrorModal}
+        />
       )}
-      {subpage === "details" && (isStarted || isStopped) && (
-        <ActiveCampaign refresh={refresh} campaign={campaign} />
+      {!loading && subpage === "details" && (isStarted || isStopped) && (
+        <ActiveCampaign
+          refresh={refresh}
+          campaign={campaign}
+          openErrorModal={openErrorModal}
+        />
       )}
-      {subpage === "details" && isRevoked && (
+      {!loading && subpage === "details" && isRevoked && (
         <PastCampaign refresh={refresh} campaign={campaign} />
       )}
     </div>

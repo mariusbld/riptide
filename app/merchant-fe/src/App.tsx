@@ -90,7 +90,7 @@ const Navbar: FC = () => {
   const [posUrl, setPosUrl] = useState<string>();
   const { endpoint, setEndpoint } = useEndpoint();
   const { user } = useAuth();
-  const { activeCampaigns } = useCampaignCache();
+  const { startedCampaigns } = useCampaignCache();
 
   useEffect(() => {
     (async () => {
@@ -98,14 +98,11 @@ const Navbar: FC = () => {
         setPosUrl(undefined);
         return;
       }
-      const startedCampaigns = activeCampaigns.filter(
-        (c) => c.state === CampaignState.Started
-      );
       const startedCampaignKeys = startedCampaigns.map((c) => c.id);
       const url = buildPointOfSaleUrl(wallet.publicKey, startedCampaignKeys);
       setPosUrl(url);
     })();
-  }, [wallet, wallet.connected, user, activeCampaigns]);
+  }, [wallet, wallet.connected, user, startedCampaigns]);
 
   const copyPosUrl = () => {
     posUrl && navigator.clipboard.writeText(posUrl);

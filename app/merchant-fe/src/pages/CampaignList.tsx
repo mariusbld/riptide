@@ -30,7 +30,7 @@ const Campaign: FC<{ campaign: Campaign }> = ({ campaign }) => {
 };
 
 const isActive = (c: Campaign): boolean => {
-  return c.state === CampaignState.Started;
+  return c.state === CampaignState.Started || c.state === CampaignState.Stopped;
 };
 
 const isDraft = (c: Campaign): boolean => {
@@ -38,9 +38,7 @@ const isDraft = (c: Campaign): boolean => {
 };
 
 const isInactive = (c: Campaign): boolean => {
-  return (
-    c.state !== CampaignState.Initialized && c.state !== CampaignState.Started
-  );
+  return c.state === CampaignState.Revoked || c.state === CampaignState.None;
 };
 
 const sortCampaignsCmp = (a: Campaign, b: Campaign) => {
