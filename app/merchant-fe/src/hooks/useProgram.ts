@@ -73,7 +73,23 @@ export interface Winner {
   amount: number;
 }
 
+export enum CampaignEventType {
+  CampaignStarted,
+  CampaignStopped,
+  CampaignRevoked,
+}
+
+export interface CampaignEvent {
+  eventType: CampaignEventType;
+}
+
+export interface CampaignEventCallback {
+  (e: CampaignEvent): void;
+}
+
 export interface ProgramContextState {
+  addEventCallback(cb: CampaignEventCallback): void;
+  removeEventCallback(cb: CampaignEventCallback): void;
   createCampaign(conf: CampaignConfig): Promise<CampaignId>;
   getCampaign(id: CampaignId): Promise<CampaignWithFunds>;
   addCampaignFunds(id: CampaignId, amount: number): Promise<void>;

@@ -19,6 +19,9 @@ import { useEndpoint } from "../hooks/useEndpoint";
 import {
   Campaign,
   CampaignConfig,
+  CampaignEvent,
+  CampaignEventCallback,
+  CampaignEventType,
   CampaignId,
   CampaignState,
   CampaignWithFunds,
@@ -67,6 +70,12 @@ export const ProgramProvider: FC<ProgramProviderProps> = ({ children }) => {
 };
 
 class UnavailableClient implements ProgramContextState {
+  addEventCallback(cb: CampaignEventCallback): void {
+    throw new Error("Method not implemented.");
+  }
+  removeEventCallback(cb: CampaignEventCallback): void {
+    throw new Error("Method not implemented.");
+  }
   listCampaignWinners(id: CampaignId): Promise<Winner[]> {
     throw new Error("Method not implemented.");
   }
@@ -106,6 +115,7 @@ class Client implements ProgramContextState {
   usdcMint: PublicKey;
   // TODO: move this and all the API's to a QueryClient and QueryProvider
   queryConnection: Connection;
+  eventCallbacks: CampaignEventCallback[];
 
   static CAMPAIGN_PDA_SEED = "campaign";
 
@@ -119,6 +129,7 @@ class Client implements ProgramContextState {
     this.wallet = program.provider.wallet.publicKey;
     this.usdcMint = usdcMint;
     this.queryConnection = queryConnection;
+    this.eventCallbacks = [];
   }
 
   async getPda(): Promise<[PublicKey, number]> {
@@ -126,6 +137,22 @@ class Client implements ProgramContextState {
       [Buffer.from(Client.CAMPAIGN_PDA_SEED)],
       this.program.programId
     );
+  }
+
+  addEventCallback(cb: CampaignEventCallback): void {
+    this.eventCallbacks.push(cb);
+  }
+
+  removeEventCallback(cb: CampaignEventCallback): void {
+    const idx = this.eventCallbacks.indexOf(cb);
+    if (idx >= 0 && idx < this.eventCallbacks.length) {
+      this.eventCallbacks.splice(idx, 1);
+    }
+  }
+
+  notifyEvent(eventType: CampaignEventType) {
+    const event: CampaignEvent = { eventType };
+    this.eventCallbacks.forEach((c) => c(event));
   }
 
   async addCampaignFunds(
@@ -239,6 +266,7 @@ class Client implements ProgramContextState {
         campaign: id,
       },
     });
+    this.notifyEvent(CampaignEventType.CampaignStarted);
   }
 
   async stopCampaign(id: CampaignId): Promise<void> {
@@ -248,6 +276,7 @@ class Client implements ProgramContextState {
         campaign: id,
       },
     });
+    this.notifyEvent(CampaignEventType.CampaignStopped);
   }
 
   async revokeCampaign(id: CampaignId): Promise<void> {
@@ -257,6 +286,7 @@ class Client implements ProgramContextState {
         campaign: id,
       },
     });
+    this.notifyEvent(CampaignEventType.CampaignRevoked);
   }
 
   async listCampaignWinners(campaignId: CampaignId): Promise<Winner[]> {

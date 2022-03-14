@@ -17,15 +17,17 @@ import PhoriaLogo from "./components/svg/PhoriaLogo";
 import { SolanaPayLogo } from "./components/svg/SolanaPayLogo";
 import ToggleButton from "./components/ToggleButton";
 import { AuthProvider } from "./contexts/AuthProvider";
+import { CampaignCacheProvider } from "./contexts/CampaignCacheProvider";
 import { ConfigProvider } from "./contexts/ConfigProvider";
 import { ConnectionProvider } from "./contexts/ConnectionProvider";
 import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useAuth } from "./hooks/useAuth";
+import { useCampaignCache } from "./hooks/useCampaignCache";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
-import { useProgram } from "./hooks/useProgram";
+import { CampaignState } from "./hooks/useProgram";
 import Home from "./pages/Home";
 import { capitalize } from "./utils/format";
 
@@ -33,7 +35,10 @@ const POS_URL = process.env.REACT_APP_POS_URL ?? "";
 const PHORIA_KEY = process.env.REACT_APP_PHORIA_KEY ?? "";
 const PHORIA_LABEL = "Solana Pay POS";
 
-const getPosUrl = (walletKey: PublicKey, campaignKeys: PublicKey[]): string => {
+const buildPointOfSaleUrl = (
+  walletKey: PublicKey,
+  campaignKeys: PublicKey[]
+): string => {
   const url = new URL(POS_URL);
   url.searchParams.append("recipient", walletKey.toString());
   url.searchParams.append("label", PHORIA_LABEL);
@@ -66,7 +71,9 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
             <ConnectionProvider>
               <WalletProvider wallets={wallets} autoConnect>
                 <WalletModalProvider>
-                  <ProgramProvider>{children}</ProgramProvider>
+                  <ProgramProvider>
+                    <CampaignCacheProvider>{children}</CampaignCacheProvider>
+                  </ProgramProvider>
                 </WalletModalProvider>
               </WalletProvider>
             </ConnectionProvider>
@@ -80,29 +87,25 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
 const Navbar: FC = () => {
   const { toggle } = useDarkMode();
   const wallet = useWallet();
-  const program = useProgram();
   const [posUrl, setPosUrl] = useState<string>();
   const { endpoint, setEndpoint } = useEndpoint();
   const { user } = useAuth();
+  const { activeCampaigns } = useCampaignCache();
 
   useEffect(() => {
     (async () => {
-      if (
-        !wallet ||
-        !wallet.connected ||
-        !wallet.publicKey ||
-        !program ||
-        !user
-      ) {
+      if (!wallet || !wallet.connected || !wallet.publicKey || !user) {
         setPosUrl(undefined);
         return;
       }
-      const activeCampaigns = await program.listActiveCampaigns();
-      const activeCampaignKeys = activeCampaigns.map((c) => c.id);
-      const url = getPosUrl(wallet.publicKey, activeCampaignKeys);
+      const startedCampaigns = activeCampaigns.filter(
+        (c) => c.state === CampaignState.Started
+      );
+      const startedCampaignKeys = startedCampaigns.map((c) => c.id);
+      const url = buildPointOfSaleUrl(wallet.publicKey, startedCampaignKeys);
       setPosUrl(url);
     })();
-  }, [wallet, wallet.connected, program, user]);
+  }, [wallet, wallet.connected, user, activeCampaigns]);
 
   const copyPosUrl = () => {
     posUrl && navigator.clipboard.writeText(posUrl);
