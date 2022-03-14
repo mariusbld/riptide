@@ -15,6 +15,7 @@ interface props {
   title?: string;
   icon?: ModalIcon;
   confirmText?: string;
+  confirmLoading?: boolean;
 }
 
 const ConfirmModal: FC<props> = ({
@@ -25,6 +26,7 @@ const ConfirmModal: FC<props> = ({
   title,
   icon,
   confirmText,
+  confirmLoading,
 }) => {
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -84,7 +86,7 @@ const ConfirmModal: FC<props> = ({
                   </div>
                 </div>
                 <div className="my-4">
-                  <Button onClick={onConfirm} small>
+                  <Button loading={confirmLoading} onClick={onConfirm} small>
                     {confirmText ?? "Okay"}
                   </Button>
                 </div>

@@ -7,8 +7,11 @@ export const AuthProvider: FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = React.useState<Nullable<string>>(null);
 
-  const login = (code: string) => {
-    loginProvider.login(code).then((res) => setUser(res));
+  const login = (code: string, cb?: VoidFunction) => {
+    loginProvider
+      .login(code)
+      .then((res) => setUser(res))
+      .finally(() => cb && cb());
   };
 
   const value = { user, login };

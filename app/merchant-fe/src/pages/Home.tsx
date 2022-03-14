@@ -10,13 +10,19 @@ import { useAuth } from "../hooks/useAuth";
 const Layout: FC = () => {
   const [code, setCode] = useState("");
   const { user, login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const handleLogin = () => {
+    setLoading(true);
+    login(code, () => setLoading(false));
+  };
   return (
     <div>
       <ConfirmModal
         open={!user}
         setOpen={() => {}}
-        onConfirm={() => login(code)}
+        onConfirm={handleLogin}
         title={"Enter Authentication Code"}
+        confirmLoading={loading}
       >
         <p className="text-sm dark:text-secondary-dark py-2">
           We're still in alpha! You need an authentication code to access the
@@ -24,7 +30,8 @@ const Layout: FC = () => {
         </p>
         <div className="mt-1 relative rounded-full shadow-sm">
           <input
-            onKeyPress={(e) => e.key === "Enter" && login(code)}
+            disabled={loading}
+            onKeyPress={(e) => e.key === "Enter" && handleLogin()}
             type="password"
             name="code"
             value={code}
