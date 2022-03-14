@@ -223,7 +223,7 @@ const CreateCampaign: FC = () => {
       console.error("Missing campaign id!");
       return;
     }
-    navigate(`/campaigns/${campaignId}`);
+    navigate(`/campaigns/${campaignId}/details`);
   }, [campaignId]);
 
   return (
