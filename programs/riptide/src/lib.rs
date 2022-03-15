@@ -8,6 +8,10 @@ mod account;
 mod context;
 
 const CRANK_MAX_LAG_SLOTS: u64 = 1000; // ~10 minutes
+const ALLOWED_CRANKERS: [&str; 2] = [
+    "GUrFU76TxEeTpfkZ7KHJHFrtz7nkDq7NhuF9pB4GonEg",
+    "GnidQdkfJogurrmw6w7ftiKjcSv5Lbze3uStEeDgb8Z7"
+];
 
 declare_id!("H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR");
 
@@ -61,6 +65,11 @@ pub mod riptide {
         require!(
             clock.slot - purchase.slot <= CRANK_MAX_LAG_SLOTS,
             RiptideError::PurchaseTooOld
+        );
+        let cranker_key = ctx.accounts.cranker.key.to_string();
+        require!(
+            ALLOWED_CRANKERS.iter().any(|&s| s == cranker_key),
+            RiptideError::IllegalOwner
         );
         let slot_hashes = &ctx.accounts.slot_hashes;
         let random = Random::new(slot_hashes);

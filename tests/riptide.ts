@@ -20,7 +20,8 @@ describe('riptide', () => {
   //const owner = program.provider.wallet;
   const winner = anchor.web3.Keypair.generate();
   let winnerToken: anchor.web3.PublicKey;
-  const cranker = anchor.web3.Keypair.generate();
+  // const cranker = anchor.web3.Keypair.generate();
+  const cranker = program.provider.wallet;
   let crankerToken: anchor.web3.PublicKey;
   const campaignKeypair = anchor.web3.Keypair.generate();
   let mint: anchor.web3.PublicKey;
@@ -175,8 +176,7 @@ describe('riptide', () => {
           crankerToken,
           tokenProgram: TOKEN_PROGRAM_ID,
           slotHashes: anchor.web3.SYSVAR_SLOT_HASHES_PUBKEY,
-        },
-        signers: [cranker]
+        }
       });
     }
 
