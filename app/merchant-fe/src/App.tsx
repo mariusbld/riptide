@@ -2,12 +2,12 @@ import { ExternalLinkIcon } from "@heroicons/react/solid";
 import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton
+  WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter
+  TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
