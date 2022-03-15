@@ -57,13 +57,6 @@ pub mod riptide {
         campaign.revoke()
     }
     pub fn crank_campaign(ctx: Context<CrankCampaign>, bump: u8, purchase: Purchase) -> Result<()> {
-        // let allowed_crankers = &ctx.accounts.whitelist.allowed_crankers;
-        // require!(
-        //     allowed_crankers
-        //         .into_iter()
-        //         .any(|&c| c == *ctx.accounts.cranker.key),
-        //     RiptideError::IllegalOwner
-        // );
         let clock = Clock::get()?;
         require!(
             clock.slot - purchase.slot <= CRANK_MAX_LAG_SLOTS,
