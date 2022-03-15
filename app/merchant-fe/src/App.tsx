@@ -2,12 +2,12 @@ import { ExternalLinkIcon } from "@heroicons/react/solid";
 import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton,
+  WalletMultiButton
 } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter,
+  TorusWalletAdapter
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
@@ -27,9 +27,8 @@ import { useAuth } from "./hooks/useAuth";
 import { useCampaignCache } from "./hooks/useCampaignCache";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
-import { CampaignState } from "./hooks/useProgram";
 import Home from "./pages/Home";
-import { capitalize } from "./utils/format";
+import { capitalize, trimAfter } from "./utils/format";
 
 const POS_URL = process.env.REACT_APP_POS_URL ?? "";
 const PHORIA_KEY = process.env.REACT_APP_PHORIA_KEY ?? "";
@@ -49,7 +48,7 @@ const buildPointOfSaleUrl = (
   return url.toString();
 };
 
-const EndpointOptions: EndpointName[] = ["local", "devnet"];
+const EndpointOptions: EndpointName[] = ["mainnet-beta", "devnet", "local"];
 
 export const App: FC = () => (
   <Context>
@@ -131,14 +130,14 @@ const Navbar: FC = () => {
           </DropdownItem>
           <DropdownItem onClick={copyPosUrl}>Copy Link</DropdownItem>
         </Dropdown>
-        <Dropdown transparent label={capitalize(endpoint)}>
+        <Dropdown transparent label={capitalize(trimAfter(endpoint, "-"))}>
           {EndpointOptions.map((option) => (
             <DropdownItem
               key={option}
               onClick={() => setEndpoint(option)}
               isSelected={option === endpoint}
             >
-              {capitalize(option)}
+              {capitalize(trimAfter(option, "-"))}
             </DropdownItem>
           ))}
         </Dropdown>
