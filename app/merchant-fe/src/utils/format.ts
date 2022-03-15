@@ -17,3 +17,8 @@ export const capitalize = (s: string): string => {
   }
   return s.slice(0, 1).toLocaleUpperCase() + s.slice(1);
 };
+
+export const trimAfter = (s: string, c: string) => {
+  const p = s.indexOf(c);
+  return p < 0 ? s : s.slice(0, p);
+};
