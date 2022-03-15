@@ -4,6 +4,7 @@ import { Riptide } from '../target/types/riptide';
 import { expect } from 'chai';
 
 const CAMPAIGN_PDA_SEED = "campaign";
+const WHITELIST_PDA_SEED = "whitelist";
 
 function newPrize(count: number, amount: number) {
   return {
@@ -17,6 +18,7 @@ describe('riptide', () => {
   const program = anchor.workspace.Riptide as anchor.Program<Riptide>;
   const conn = program.provider.connection;
   const owner = anchor.web3.Keypair.generate();
+  const admin = program.provider.wallet;
   //const owner = program.provider.wallet;
   const winner = anchor.web3.Keypair.generate();
   let winnerToken: anchor.web3.PublicKey;
@@ -26,6 +28,8 @@ describe('riptide', () => {
   let mint: anchor.web3.PublicKey;
   let pda: anchor.web3.PublicKey;
   let bump: number;
+  let whitelist: anchor.web3.PublicKey;
+  let whitelistBump: number;
   
   const prize1 = newPrize(1, 100);
   const prize2 = newPrize(5, 50);
@@ -41,14 +45,26 @@ describe('riptide', () => {
   before(async () => {
     const airDrop = await program.provider.connection.requestAirdrop(owner.publicKey, 1e10);
     await program.provider.connection.confirmTransaction(airDrop);
+    [whitelist, whitelistBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(WHITELIST_PDA_SEED)], program.programId);
     [pda, bump] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(CAMPAIGN_PDA_SEED)], program.programId);
     mint = await createMint(conn, owner, owner.publicKey, null, 0);
     winnerToken = await createAssociatedTokenAccount(conn, owner, mint, winner.publicKey);
     crankerToken = await createAssociatedTokenAccount(conn, owner, mint, cranker.publicKey);
   });
+
+  it('init whitelist', async () => {
+    await program.rpc.initWhitelist(owner.publicKey, {
+      accounts: {
+        whitelist,
+        admin: admin.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId
+      }
+    })
+  });
   
-  it('init campaign', async() => {
+  xit('init campaign', async() => {
     const end = { targetSalesReached: {} }
     const targetSalesAmount = new anchor.BN(TARGET_SALES_AMOUNT);
     const targetEndTs = null;
@@ -71,7 +87,7 @@ describe('riptide', () => {
     expect(campaign.stats.prizeStats.length).to.eql(prizeData.entries.length);
   });
 
-  it('add funds', async() => {
+  xit('add funds', async() => {
     const vaultToken = anchor.web3.Keypair.generate();
     const amount = new anchor.BN(totalPrizeAmount);
     const srcToken = await createAssociatedTokenAccount(conn, owner, mint, owner.publicKey);
@@ -98,7 +114,7 @@ describe('riptide', () => {
     expect(Number(src.amount)).to.equal(0);
   });
 
-  it ('start campaign', async () => {
+  xit ('start campaign', async () => {
     await program.rpc.startCampaign({
       accounts: {
         owner: owner.publicKey,
@@ -154,7 +170,7 @@ describe('riptide', () => {
     expect(Number(dst.amount)).to.equal(Number(initialVault.amount));
   });
 
-  it('crank campaign', async() => {
+  xit('crank campaign', async() => {
     let campaign = await program.account.campaign.fetch(campaignKeypair.publicKey);
     const vaultToken = campaign.vaults[0].token;
     const amount = new anchor.BN(PURCHASE_AMOUNT);

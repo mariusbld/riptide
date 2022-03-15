@@ -7,23 +7,19 @@ use context::*;
 mod account;
 mod context;
 
-const SLOT_HASHES: &str = "SysvarS1otHashes111111111111111111111111111";
 const CRANK_MAX_LAG_SLOTS: u64 = 1000; // ~10 minutes
+const PROGRAM_ADMIN: &str = "GnidQdkfJogurrmw6w7ftiKjcSv5Lbze3uStEeDgb8Z7";
 
-declare_id!("6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J");
+declare_id!("H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR");
 
 #[program]
 pub mod riptide {
     use super::*;
-    pub fn init_campaign(ctx: Context<InitCampaign>, config: CampaignConfig) -> ProgramResult {
+    pub fn init_campaign(ctx: Context<InitCampaign>, config: CampaignConfig) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         campaign.init(ctx.accounts.owner.key(), config)
     }
-    pub fn add_campaign_funds(
-        ctx: Context<AddCampaignFunds>,
-        bump: u8,
-        amount: u64,
-    ) -> ProgramResult {
+    pub fn add_campaign_funds(ctx: Context<AddCampaignFunds>, _bump: u8, amount: u64) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         let vault = Vault {
             token: ctx.accounts.vault_token.key(),
@@ -32,7 +28,7 @@ pub mod riptide {
         campaign.add_vault(vault)?;
         token::transfer(ctx.accounts.into(), amount)
     }
-    pub fn withdraw_campaign_funds(ctx: Context<WithdrawCampaignFunds>, bump: u8) -> ProgramResult {
+    pub fn withdraw_campaign_funds(ctx: Context<WithdrawCampaignFunds>, bump: u8) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         let vault = Vault {
             token: ctx.accounts.vault_token.key(),
@@ -45,33 +41,32 @@ pub mod riptide {
             ctx.accounts.vault_token.amount,
         )
     }
-    pub fn start_campaign(ctx: Context<StartCampaign>) -> ProgramResult {
+    pub fn start_campaign(ctx: Context<StartCampaign>) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         campaign.start()
     }
-    pub fn stop_campaign(ctx: Context<StopCampaign>) -> ProgramResult {
+    pub fn stop_campaign(ctx: Context<StopCampaign>) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         campaign.stop()
     }
-    pub fn revoke_campaign(ctx: Context<RevokeCampaign>) -> ProgramResult {
+    pub fn revoke_campaign(ctx: Context<RevokeCampaign>) -> Result<()> {
         let campaign = &mut ctx.accounts.campaign;
         campaign.revoke()
     }
-    pub fn crank_campaign(
-        ctx: Context<CrankCampaign>,
-        bump: u8,
-        purchase: Purchase,
-    ) -> ProgramResult {
+    pub fn crank_campaign(ctx: Context<CrankCampaign>, bump: u8, purchase: Purchase) -> Result<()> {
+        // let allowed_crankers = &ctx.accounts.whitelist.allowed_crankers;
+        // require!(
+        //     allowed_crankers
+        //         .into_iter()
+        //         .any(|&c| c == *ctx.accounts.cranker.key),
+        //     RiptideError::IllegalOwner
+        // );
         let clock = Clock::get()?;
         require!(
             clock.slot - purchase.slot <= CRANK_MAX_LAG_SLOTS,
             RiptideError::PurchaseTooOld
         );
         let slot_hashes = &ctx.accounts.slot_hashes;
-        require!(
-            slot_hashes.key().to_string() == SLOT_HASHES,
-            ProgramError::InvalidAccountData
-        );
         let random = Random::new(slot_hashes);
         let campaign = &mut ctx.accounts.campaign;
         let prize = match campaign.crank(purchase, random) {
@@ -97,5 +92,23 @@ pub mod riptide {
                 .with_signer(&[seeds]),
             cranker_amount,
         )
+    }
+    pub fn init_whitelist(ctx: Context<InitWhitelist>, owner: Pubkey) -> Result<()> {
+        require!(
+            ctx.accounts.admin.to_account_info().key.to_string() == PROGRAM_ADMIN,
+            RiptideError::IllegalOwner
+        );
+        let whitelist = &mut ctx.accounts.whitelist;
+        require!(
+            !whitelist.initialized,
+            RiptideError::AccountAlreadyInitialized
+        );
+        let bump = *ctx.bumps.get("whitelist").unwrap();
+        whitelist.init(owner, bump);
+        Ok(())
+    }
+    pub fn update_whitelist(ctx: Context<UpdateWhitelist>, op: UpdateWhitelistOp) -> Result<()> {
+        let whitelist = &mut ctx.accounts.whitelist;
+        whitelist.update(op)
     }
 }

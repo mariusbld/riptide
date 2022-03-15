@@ -1,6 +1,5 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use arrayref::array_ref;
-use std::result::Result as ResultGeneric;
 
 //
 // slot_hash account is an Vec of SlotHash entries
@@ -17,9 +16,13 @@ const SLOT_HASH_SKIP_BYTES: usize = SLOT_HASH_VEC_PREFIX_BYTES + SLOT_HASH_ENTRY
 const U64_SIZE_BYTES: usize = 8;
 const VISITED_ARR_SIZE: usize = 30; // 30 purchases / 10 minutes => 1 purchase every 20sec.
 
-#[error]
+#[error_code]
 pub enum RiptideError {
     InvalidState,
+    InvalidArgument,
+    InvalidAccountData,
+    IllegalOwner,
+    AccountAlreadyInitialized,
     VaultNotInitialized,
     VaultAlreadyInitialized,
     InternalErrorProbArray,
@@ -197,7 +200,7 @@ impl Campaign {
             CampaignEndType::TargetSalesReached => config.target_sales_amount.is_some(),
         };
     }
-    pub fn init(&mut self, owner: Pubkey, config: CampaignConfig) -> ProgramResult {
+    pub fn init(&mut self, owner: Pubkey, config: CampaignConfig) -> Result<()> {
         require!(self.can_init(), RiptideError::InvalidState);
         require!(
             config.end == CampaignEndType::TargetSalesReached,
@@ -205,7 +208,7 @@ impl Campaign {
         );
         require!(
             Campaign::validate_config(&config),
-            ProgramError::InvalidArgument
+            RiptideError::InvalidArgument
         );
         let clock = Clock::get()?;
         self.owner = owner;
@@ -221,26 +224,26 @@ impl Campaign {
         self.vaults = Vec::new();
         Ok(())
     }
-    pub fn start(&mut self) -> ProgramResult {
+    pub fn start(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         require!(self.can_start(), RiptideError::InvalidState);
         self.state = CampaignState::Started;
         self.stats.set_started(clock.unix_timestamp);
         Ok(())
     }
-    pub fn stop(&mut self) -> ProgramResult {
+    pub fn stop(&mut self) -> Result<()> {
         let clock = Clock::get()?;
         require!(self.can_stop(), RiptideError::InvalidState);
         self.state = CampaignState::Stopped;
         self.stats.set_stopped(clock.unix_timestamp);
         Ok(())
     }
-    pub fn revoke(&mut self) -> ProgramResult {
+    pub fn revoke(&mut self) -> Result<()> {
         require!(self.can_revoke(), RiptideError::InvalidState);
         self.state = CampaignState::Revoked;
         Ok(())
     }
-    pub fn add_vault(&mut self, vault: Vault) -> ProgramResult {
+    pub fn add_vault(&mut self, vault: Vault) -> Result<()> {
         require!(
             self.state == CampaignState::Initialized,
             RiptideError::InvalidState
@@ -252,21 +255,17 @@ impl Campaign {
         self.vaults.push(vault);
         Ok(())
     }
-    pub fn remove_vault(&mut self, vault: Vault) -> ProgramResult {
+    pub fn remove_vault(&mut self, vault: Vault) -> Result<()> {
         require!(
             self.state == CampaignState::Revoked,
             RiptideError::InvalidState
         );
         require!(self.vaults.len() == 1, RiptideError::VaultNotInitialized);
-        require!(self.vaults[0] == vault, ProgramError::InvalidAccountData);
+        require!(self.vaults[0] == vault, RiptideError::InvalidAccountData);
         self.vaults.remove(0);
         Ok(())
     }
-    pub fn crank(
-        &mut self,
-        purchase: Purchase,
-        random: Random,
-    ) -> ResultGeneric<Option<Prize>, ProgramError> {
+    pub fn crank(&mut self, purchase: Purchase, random: Random) -> Result<Option<Prize>> {
         require!(self.can_crank(), RiptideError::InvalidState);
         require!(
             !self.visited.has(purchase.hash),
@@ -335,5 +334,51 @@ impl Random {
     }
     pub fn float64(&self) -> f64 {
         return self.f64val;
+    }
+}
+
+#[account]
+pub struct Whitelist {
+    pub initialized: bool,
+    pub owner: Pubkey,
+    pub bump: u8,
+    pub allowed_crankers: Vec<Pubkey>,
+}
+
+#[derive(Clone, AnchorSerialize, AnchorDeserialize)]
+pub enum UpdateWhitelistOp {
+    SetOwner(Pubkey),
+    AddAllowedCranker(Pubkey),
+    RemoveAllowedCranker(Pubkey),
+}
+
+impl Whitelist {
+    pub fn init(&mut self, owner: Pubkey, bump: u8) {
+        self.initialized = true;
+        self.owner = owner;
+        self.bump = bump;
+        self.allowed_crankers = Vec::new();
+    }
+    pub fn update(&mut self, op: UpdateWhitelistOp) -> Result<()> {
+        match op {
+            UpdateWhitelistOp::SetOwner(owner) => self.owner = owner,
+            UpdateWhitelistOp::AddAllowedCranker(cranker) => self.add_allowed_cranker(cranker),
+            UpdateWhitelistOp::RemoveAllowedCranker(cranker) => {
+                self.remove_allowed_cranker(cranker)
+            }
+        }
+        Ok(())
+    }
+    fn add_allowed_cranker(&mut self, cranker: Pubkey) {
+        let crankers = &mut self.allowed_crankers;
+        if !crankers.into_iter().any(|&mut c| c == cranker) {
+            crankers.push(cranker);
+        }
+    }
+    fn remove_allowed_cranker(&mut self, cranker: Pubkey) {
+        let crankers = &mut self.allowed_crankers;
+        if let Some(index) = crankers.into_iter().position(|&mut c| c == cranker) {
+            crankers.swap_remove(index);
+        }
     }
 }
