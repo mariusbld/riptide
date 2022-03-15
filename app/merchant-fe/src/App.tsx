@@ -34,11 +34,26 @@ const POS_URL = process.env.REACT_APP_POS_URL ?? "";
 const PHORIA_KEY = process.env.REACT_APP_PHORIA_KEY ?? "";
 const PHORIA_LABEL = "Solana Pay POS";
 
+const getEndpointParam = (endpoint: EndpointName): string => {
+  switch (endpoint) {
+    case "devnet":
+      return "devnet";
+    case "mainnet-beta":
+      return "mainnet";
+    case "local":
+      return "local";
+    default:
+      return "";
+  }
+};
+
 const buildPointOfSaleUrl = (
+  endpoint: EndpointName,
   walletKey: PublicKey,
   campaignKeys: PublicKey[]
 ): string => {
   const url = new URL(POS_URL);
+  url.searchParams.append("endpoint", getEndpointParam(endpoint));
   url.searchParams.append("recipient", walletKey.toString());
   url.searchParams.append("label", PHORIA_LABEL);
   url.searchParams.append("reference", PHORIA_KEY);
@@ -98,7 +113,11 @@ const Navbar: FC = () => {
         return;
       }
       const startedCampaignKeys = startedCampaigns.map((c) => c.id);
-      const url = buildPointOfSaleUrl(wallet.publicKey, startedCampaignKeys);
+      const url = buildPointOfSaleUrl(
+        endpoint,
+        wallet.publicKey,
+        startedCampaignKeys
+      );
       setPosUrl(url);
     })();
   }, [wallet, wallet.connected, user, startedCampaigns]);
