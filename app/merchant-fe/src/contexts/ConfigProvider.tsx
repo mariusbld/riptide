@@ -6,11 +6,11 @@ import { EndpointName, useEndpoint } from "../hooks/useEndpoint";
 // const PROGRAM_ID = "371nGytFGTK1wymnzyk9JdJM52AqjCkeYwRFtB8LRHAL";
 
 const PROGRAM_ID = new Map<EndpointName, PublicKey>([
-  ["local", new PublicKey("6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J")],
-  ["devnet", new PublicKey("6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J")],
+  ["local", new PublicKey("H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR")],
+  ["devnet", new PublicKey("H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR")],
   [
     "mainnet-beta",
-    new PublicKey("6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J"),
+    new PublicKey("H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR"),
   ],
 ]);
 

@@ -502,34 +502,50 @@
     },
     {
       "code": 6001,
-      "name": "VaultNotInitialized"
+      "name": "InvalidArgument"
     },
     {
       "code": 6002,
-      "name": "VaultAlreadyInitialized"
+      "name": "InvalidAccountData"
     },
     {
       "code": 6003,
-      "name": "InternalErrorProbArray"
+      "name": "IllegalOwner"
     },
     {
       "code": 6004,
-      "name": "InternalErrorRandom"
+      "name": "AccountAlreadyInitialized"
     },
     {
       "code": 6005,
-      "name": "NotImplemented"
+      "name": "VaultNotInitialized"
     },
     {
       "code": 6006,
-      "name": "PurchaseTooOld"
+      "name": "VaultAlreadyInitialized"
     },
     {
       "code": 6007,
+      "name": "InternalErrorProbArray"
+    },
+    {
+      "code": 6008,
+      "name": "InternalErrorRandom"
+    },
+    {
+      "code": 6009,
+      "name": "NotImplemented"
+    },
+    {
+      "code": 6010,
+      "name": "PurchaseTooOld"
+    },
+    {
+      "code": 6011,
       "name": "PurchaseAlreadySeen"
     }
   ],
   "metadata": {
-    "address": "6w7wDruHf7m7VRatAxQqF1HgQ84brYJggbGuZSvdX43J"
+    "address": "H6EMst55Nf5nLJ6tZSoNE2T3Mq9M1stXuYsY7XcqFfpR"
   }
 }
