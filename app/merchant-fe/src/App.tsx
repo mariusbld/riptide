@@ -12,6 +12,7 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import ConfirmModal from "./components/ConfirmModal";
 import Dropdown, { DropdownItem } from "./components/Dropdown";
 import PhoriaLogo from "./components/svg/PhoriaLogo";
 import { SolanaPayLogo } from "./components/svg/SolanaPayLogo";
@@ -22,11 +23,13 @@ import { ConfigProvider } from "./contexts/ConfigProvider";
 import { ConnectionProvider } from "./contexts/ConnectionProvider";
 import { DarkModeProvider } from "./contexts/DarkModeProvider";
 import { EndpointProvider } from "./contexts/EndpointProvider";
+import { ErrorReportingProvider } from "./contexts/ErrorReportingProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useAuth } from "./hooks/useAuth";
 import { useCampaignCache } from "./hooks/useCampaignCache";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
+import { useErrorReporting } from "./hooks/useErrorReporting";
 import Home from "./pages/Home";
 import { capitalize, trimAfter } from "./utils/format";
 
@@ -85,9 +88,11 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
             <ConnectionProvider>
               <WalletProvider wallets={wallets} autoConnect>
                 <WalletModalProvider>
-                  <ProgramProvider>
-                    <CampaignCacheProvider>{children}</CampaignCacheProvider>
-                  </ProgramProvider>
+                  <ErrorReportingProvider>
+                    <ProgramProvider>
+                      <CampaignCacheProvider>{children}</CampaignCacheProvider>
+                    </ProgramProvider>
+                  </ErrorReportingProvider>
                 </WalletModalProvider>
               </WalletProvider>
             </ConnectionProvider>
@@ -169,21 +174,29 @@ const Navbar: FC = () => {
 };
 
 const Footer: FC = () => {
-  const logo = new URL(
-    "./images/solana-pay-logo.png",
-    import.meta.url
-  ).toString();
   return (
-    <div className="absolute bottom-0 flex justify-center items-center py-8 w-full">
-      <span className="px-2">Powered by</span>
-      <SolanaPayLogo />
-    </div>
+    <a href="https://solanapay.com/" target={"_blank"}>
+      <div className="absolute bottom-0 flex justify-center items-center py-8 w-full">
+        <span className="px-2">Powered by</span>
+        <SolanaPayLogo />
+      </div>
+    </a>
   );
 };
 
 const Content: FC = () => {
+  const { modalOpen, setModalOpen, modalTitle, modalText } =
+    useErrorReporting();
   return (
     <>
+      <ConfirmModal
+        open={modalOpen}
+        setOpen={setModalOpen}
+        onConfirm={() => setModalOpen(false)}
+        title={modalTitle}
+      >
+        <p className="text-sm dark:text-secondary-dark">{modalText}</p>
+      </ConfirmModal>
       <div className="max-w-7xl max-w mx-auto px-4 sm:px-6">
         <Navbar />
         <div className="max-w-3xl max-w mx-auto px-4 sm:px-6">
