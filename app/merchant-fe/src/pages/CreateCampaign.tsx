@@ -11,6 +11,7 @@ import NumberInput from "../components/NumberInput";
 import SectionHeading from "../components/SectionHeading";
 import Wizard from "../components/Wizard";
 import { useConfig } from "../hooks/useConfig";
+import { useErrorReporting } from "../hooks/useErrorReporting";
 import {
   CampaignConfig,
   Prize,
@@ -207,6 +208,7 @@ const CreateCampaign: FC = () => {
   const [campaignId, setCampaignId] = useState<Nullable<PublicKey>>(null);
   const navigate = useNavigate();
   const [config, setConfig] = useState<CampaignConfig>(defaultConfig);
+  const { showError } = useErrorReporting();
 
   const handleCreate = async () => {
     try {
@@ -214,7 +216,7 @@ const CreateCampaign: FC = () => {
       setCampaignId(id);
       setOpen(true);
     } catch {
-      alert("Encountered an error while trying to create the campaign!");
+      showError("There was an error while trying to create the campaign!");
     }
   };
 

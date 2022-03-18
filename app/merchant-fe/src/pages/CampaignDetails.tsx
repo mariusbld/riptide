@@ -21,6 +21,7 @@ import {
 import { getMissingPrizeFunds, getVaultFunds } from "../utils/campaign";
 import { toCurrencyString, toDisplayString } from "../utils/format";
 import { useCampaignCache } from "../hooks/useCampaignCache";
+import { useErrorReporting } from "../hooks/useErrorReporting";
 
 const AddFunds: FC<{
   campaign: CampaignWithFunds;
@@ -28,14 +29,20 @@ const AddFunds: FC<{
 }> = ({ campaign, refresh }) => {
   const { usdcMint } = useConfig();
   const program = useProgram();
+  const { showError } = useErrorReporting();
   const missingFunds = getMissingPrizeFunds(campaign);
+  const [loading, setLoading] = useState(false);
 
   const handleAddFunds = async () => {
     try {
+      setLoading(true);
       await program.addCampaignFunds(campaign.id, missingFunds);
       await refresh();
     } catch (err) {
+      showError("There was an error while adding funds. Please try again.");
       console.error(`Error while adding funds: ${err}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,7 +63,7 @@ const AddFunds: FC<{
         </span>{" "}
         in order to start the campaign.
       </div>
-      <Button small onClick={handleAddFunds}>
+      <Button loading={loading} small onClick={handleAddFunds}>
         Deposit Funds
       </Button>
     </>
@@ -69,18 +76,26 @@ const WithdrawFunds: FC<{
 }> = ({ campaign, refresh }) => {
   const { usdcMint } = useConfig();
   const program = useProgram();
+  const { showError } = useErrorReporting();
   const vaultFunds = getVaultFunds(campaign);
   const vault = useMemo(() => campaign.vaults.at(0), [campaign]);
+  const [loading, setLoading] = useState(false);
 
   const handleWithdrawFunds = async () => {
     if (!vault) {
       return;
     }
     try {
+      setLoading(true);
       await program.withdrawCampaignFunds(campaign.id, vault);
       await refresh();
     } catch (err) {
+      showError(
+        "There was an error while withdrawing funds. Please try again."
+      );
       console.error(`Error while adding funds: ${err}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,7 +116,7 @@ const WithdrawFunds: FC<{
         </span>{" "}
         worth of funds not awarded.
       </div>
-      <Button small onClick={handleWithdrawFunds}>
+      <Button loading={loading} small onClick={handleWithdrawFunds}>
         Withdraw Funds
       </Button>
     </>
@@ -111,12 +126,12 @@ const WithdrawFunds: FC<{
 const DraftCampaign: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
-  openErrorModal: (text: string) => void;
-}> = ({ campaign, refresh, openErrorModal }) => {
+}> = ({ campaign, refresh }) => {
   const program = useProgram();
   const [isStarting, setIsStarting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const { startedCampaigns } = useCampaignCache();
+  const { showError } = useErrorReporting();
 
   const canStart = useMemo(() => {
     return getMissingPrizeFunds(campaign) === 0;
@@ -124,7 +139,7 @@ const DraftCampaign: FC<{
 
   const handleStart = async () => {
     if (startedCampaigns.length > 0) {
-      openErrorModal(
+      showError(
         "You can only have 1 started campaign! Please stop other campaigns and try again."
       );
       return;
@@ -134,6 +149,7 @@ const DraftCampaign: FC<{
       await program.startCampaign(campaign.id);
       setModalOpen(true);
     } catch (err) {
+      showError("There was an error starting the campaign. Please try again.");
       console.error(`Failed to start the campaign: ${err}`);
     } finally {
       setIsStarting(false);
@@ -177,17 +193,17 @@ const DraftCampaign: FC<{
 const ActiveCampaign: FC<{
   campaign: CampaignWithFunds;
   refresh: () => Promise<void>;
-  openErrorModal: (text: string) => void;
-}> = ({ campaign, refresh, openErrorModal }) => {
+}> = ({ campaign, refresh }) => {
   type actionName = "stop" | "start" | "revoke";
   interface actionType {
     name: actionName;
     modalTitle: string;
     modalContent: string;
-    handle: () => Promise<void>;
+    handle: () => Promise<boolean>;
   }
 
   const program = useProgram();
+  const { showError } = useErrorReporting();
   const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currAction, setCurrAction] = useState<actionName>();
@@ -210,7 +226,10 @@ const ActiveCampaign: FC<{
       modalTitle: "Campaign Stopped!",
       modalContent:
         "Your campaign was successfully stopped! Any new purchases won't qualify for this campaign prizes.",
-      handle: () => program.stopCampaign(campaign.id),
+      handle: async () => {
+        await program.stopCampaign(campaign.id);
+        return true;
+      },
     }),
     [campaign.id]
   );
@@ -223,15 +242,16 @@ const ActiveCampaign: FC<{
         "Your campaign was successfully started! Open a new Point of Sale terminal to start accepting payments.",
       handle: async () => {
         if (startedCampaigns.length > 0) {
-          openErrorModal(
+          showError(
             "You can only have 1 started campaign! Please stop other campaigns and try again."
           );
-          throw new Error("Unable to start campaign! Max limit reached.");
+          return false;
         }
         await program.startCampaign(campaign.id);
+        return true;
       },
     }),
-    [campaign.id, startedCampaigns, openErrorModal]
+    [campaign.id, startedCampaigns, showError]
   );
 
   const revokeAction: actionType = useMemo(
@@ -240,7 +260,10 @@ const ActiveCampaign: FC<{
       modalTitle: "Campaign Revoked!",
       modalContent:
         "Your campaign was successfully revoked! You can now withdraw any remaining funds.",
-      handle: () => program.revokeCampaign(campaign.id),
+      handle: async () => {
+        await program.revokeCampaign(campaign.id);
+        return true;
+      },
     }),
     [campaign.id]
   );
@@ -248,9 +271,10 @@ const ActiveCampaign: FC<{
   const handleAction = async (action: actionType) => {
     setIsLoading(true);
     try {
-      await action.handle();
-      setModalOpen(true);
+      const success = await action.handle();
+      success && setModalOpen(true);
     } catch (err) {
+      showError("There was an error while performing this action.");
       console.error(
         `Error while executing ${action.name} for campaign ${campaign.id}: ${err}`
       );
@@ -364,6 +388,7 @@ const CampaignWinnersPage: FC<{ campaign: Campaign }> = ({ campaign }) => {
     <table>
       <tbody>
         {loading && <div>Loading..</div>}
+        {!loading && !winners.length && <div>No winners yet.</div>}
         {!loading &&
           winners.map((w, idx) => (
             <tr key={idx}>
@@ -408,13 +433,6 @@ const CampaignDetails: FC = () => {
   const subpage = (page as Subpage) ?? "details";
   const [campaign, setCampaign] = useState<Nullable<CampaignWithFunds>>(null);
   const [loading, setLoading] = useState(true);
-  const [errModalOpen, setErrModalOpen] = useState(false);
-  const [errModalText, setErrModalText] = useState<string>();
-
-  const openErrorModal = useCallback((text: string) => {
-    setErrModalText(text);
-    setErrModalOpen(true);
-  }, []);
 
   const program = useProgram();
   if (!id) {
@@ -447,14 +465,6 @@ const CampaignDetails: FC = () => {
 
   return (
     <div>
-      <ConfirmModal
-        open={errModalOpen}
-        setOpen={setErrModalOpen}
-        onConfirm={() => setErrModalOpen(false)}
-        title={"Ooops!"}
-      >
-        <p className="text-sm dark:text-secondary-dark">{errModalText}</p>
-      </ConfirmModal>
       <NavLink pathname={"/campaigns"}>{"< All campaigns"}</NavLink>
       <SectionHeading>
         Campaign -{" "}
@@ -475,18 +485,10 @@ const CampaignDetails: FC = () => {
         <CampaignWinnersPage campaign={campaign} />
       )}
       {!loading && subpage === "details" && isDraft && (
-        <DraftCampaign
-          refresh={refresh}
-          campaign={campaign}
-          openErrorModal={openErrorModal}
-        />
+        <DraftCampaign refresh={refresh} campaign={campaign} />
       )}
       {!loading && subpage === "details" && (isStarted || isStopped) && (
-        <ActiveCampaign
-          refresh={refresh}
-          campaign={campaign}
-          openErrorModal={openErrorModal}
-        />
+        <ActiveCampaign refresh={refresh} campaign={campaign} />
       )}
       {!loading && subpage === "details" && isRevoked && (
         <PastCampaign refresh={refresh} campaign={campaign} />
