@@ -2,15 +2,22 @@ import { ExternalLinkIcon } from "@heroicons/react/solid";
 import { useWallet, WalletProvider } from "@solana/wallet-adapter-react";
 import {
   WalletModalProvider,
-  WalletMultiButton,
+  WalletMultiButton
 } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   PhantomWalletAdapter,
-  TorusWalletAdapter,
+  TorusWalletAdapter
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
-import React, { FC, ReactNode, useEffect, useMemo, useState } from "react";
+import React, {
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { Link } from "react-router-dom";
 import ConfirmModal from "./components/ConfirmModal";
 import Dropdown, { DropdownItem } from "./components/Dropdown";
@@ -27,15 +34,19 @@ import { ErrorReportingProvider } from "./contexts/ErrorReportingProvider";
 import { ProgramProvider } from "./contexts/ProgramProvider";
 import { useAuth } from "./hooks/useAuth";
 import { useCampaignCache } from "./hooks/useCampaignCache";
+import { useConfig } from "./hooks/useConfig";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { EndpointName, useEndpoint } from "./hooks/useEndpoint";
 import { useErrorReporting } from "./hooks/useErrorReporting";
+import { useProvider } from "./hooks/useProvider";
 import Home from "./pages/Home";
+import { airdrop, deposit } from "./utils/airdrop";
 import { capitalize, trimAfter } from "./utils/format";
 
 const POS_URL = process.env.REACT_APP_POS_URL ?? "";
 const PHORIA_KEY = process.env.REACT_APP_PHORIA_KEY ?? "";
 const PHORIA_LABEL = "Solana Pay POS";
+const AIRDROP_ID = "AcRtP5PxPjAZ1K8qR4H8aXvgT2a1orFdrFQcMfBRyb5V";
 
 const getEndpointParam = (endpoint: EndpointName): string => {
   switch (endpoint) {
@@ -110,6 +121,8 @@ const Navbar: FC = () => {
   const { endpoint, setEndpoint } = useEndpoint();
   const { user } = useAuth();
   const { startedCampaigns } = useCampaignCache();
+  const provider = useProvider();
+  const { usdcMint } = useConfig();
 
   useEffect(() => {
     (async () => {
@@ -130,6 +143,27 @@ const Navbar: FC = () => {
   const copyPosUrl = () => {
     posUrl && navigator.clipboard.writeText(posUrl);
   };
+
+  const handleDeposit = useCallback(
+    () =>
+      (async () => {
+        if (!provider) return;
+        // const airdropId = await initialize(provider, usdcMint.publicKey, 100 * 10**usdcMint.decimals);
+        await deposit(
+          provider,
+          new PublicKey(AIRDROP_ID),
+          1000000 * 10 ** usdcMint.decimals
+        );
+      })(),
+    [provider]
+  );
+
+  const handleAirdrop = useCallback(() => {
+    if (!provider) return;
+    airdrop(provider, wallet, new PublicKey(AIRDROP_ID)).then(() =>
+      alert("Airdrop success!")
+    );
+  }, [provider]);
 
   return (
     <div className="flex justify-between items-baseline py-8 md:justify-start md:space-x-10">
@@ -153,6 +187,9 @@ const Navbar: FC = () => {
             </div>
           </DropdownItem>
           <DropdownItem onClick={copyPosUrl}>Copy Link</DropdownItem>
+          {endpoint === "devnet" && (
+            <DropdownItem onClick={handleAirdrop}>Airdrop USDC</DropdownItem>
+          )}
         </Dropdown>
         <Dropdown transparent label={capitalize(trimAfter(endpoint, "-"))}>
           {EndpointOptions.map((option) => (
